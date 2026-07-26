@@ -1,7 +1,7 @@
 // BakshishApp Service Worker
 // Кешира файловете за офлайн работа
 
-const CACHE_NAME = 'taxisofia-v2';
+const CACHE_NAME = 'taxisofia-sync';
 const STATIC_FILES = [
   '/BAK/',
   '/BAK/index.html',
