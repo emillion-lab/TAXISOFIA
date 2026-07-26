@@ -1,0 +1,2179 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="theme-color" content="#0284c7">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="BakshishApp">
+<link rel="manifest" href="manifest.json">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🚕 BakshishApp — Sofia</title>
+<style>
+/* required styles */
+
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-pane > svg,
+.leaflet-pane > canvas,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+	position: absolute;
+	left: 0;
+	top: 0;
+	}
+.leaflet-container {
+	overflow: hidden;
+	}
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	-webkit-user-select: none;
+	   -moz-user-select: none;
+	        user-select: none;
+	  -webkit-user-drag: none;
+	}
+/* Prevents IE11 from highlighting tiles in blue */
+.leaflet-tile::selection {
+	background: transparent;
+}
+/* Safari renders non-retina tile on retina better with this, but Chrome is worse */
+.leaflet-safari .leaflet-tile {
+	image-rendering: -webkit-optimize-contrast;
+	}
+/* hack that prevents hw layers "stretching" when loading new tiles */
+.leaflet-safari .leaflet-tile-container {
+	width: 1600px;
+	height: 1600px;
+	-webkit-transform-origin: 0 0;
+	}
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	display: block;
+	}
+/* .leaflet-container svg: reset svg max-width decleration shipped in Joomla! (joomla.org) 3.x */
+/* .leaflet-container img: map is broken in FF if you have max-width: 100% on tiles */
+.leaflet-container .leaflet-overlay-pane svg {
+	max-width: none !important;
+	max-height: none !important;
+	}
+.leaflet-container .leaflet-marker-pane img,
+.leaflet-container .leaflet-shadow-pane img,
+.leaflet-container .leaflet-tile-pane img,
+.leaflet-container img.leaflet-image-layer,
+.leaflet-container .leaflet-tile {
+	max-width: none !important;
+	max-height: none !important;
+	width: auto;
+	padding: 0;
+	}
+
+.leaflet-container img.leaflet-tile {
+	/* See: https://bugs.chromium.org/p/chromium/issues/detail?id=600120 */
+	mix-blend-mode: plus-lighter;
+}
+
+.leaflet-container.leaflet-touch-zoom {
+	-ms-touch-action: pan-x pan-y;
+	touch-action: pan-x pan-y;
+	}
+.leaflet-container.leaflet-touch-drag {
+	-ms-touch-action: pinch-zoom;
+	/* Fallback for FF which doesn't support pinch-zoom */
+	touch-action: none;
+	touch-action: pinch-zoom;
+}
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
+	-ms-touch-action: none;
+	touch-action: none;
+}
+.leaflet-container {
+	-webkit-tap-highlight-color: transparent;
+}
+.leaflet-container a {
+	-webkit-tap-highlight-color: rgba(51, 181, 229, 0.4);
+}
+.leaflet-tile {
+	filter: inherit;
+	visibility: hidden;
+	}
+.leaflet-tile-loaded {
+	visibility: inherit;
+	}
+.leaflet-zoom-box {
+	width: 0;
+	height: 0;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	z-index: 800;
+	}
+/* workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=888319 */
+.leaflet-overlay-pane svg {
+	-moz-user-select: none;
+	}
+
+.leaflet-pane         { z-index: 400; }
+
+.leaflet-tile-pane    { z-index: 200; }
+.leaflet-overlay-pane { z-index: 400; }
+.leaflet-shadow-pane  { z-index: 500; }
+.leaflet-marker-pane  { z-index: 600; }
+.leaflet-tooltip-pane   { z-index: 650; }
+.leaflet-popup-pane   { z-index: 700; }
+
+.leaflet-map-pane canvas { z-index: 100; }
+.leaflet-map-pane svg    { z-index: 200; }
+
+.leaflet-vml-shape {
+	width: 1px;
+	height: 1px;
+	}
+.lvml {
+	behavior: url(#default#VML);
+	display: inline-block;
+	position: absolute;
+	}
+
+
+/* control positioning */
+
+.leaflet-control {
+	position: relative;
+	z-index: 800;
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+.leaflet-top,
+.leaflet-bottom {
+	position: absolute;
+	z-index: 1000;
+	pointer-events: none;
+	}
+.leaflet-top {
+	top: 0;
+	}
+.leaflet-right {
+	right: 0;
+	}
+.leaflet-bottom {
+	bottom: 0;
+	}
+.leaflet-left {
+	left: 0;
+	}
+.leaflet-control {
+	float: left;
+	clear: both;
+	}
+.leaflet-right .leaflet-control {
+	float: right;
+	}
+.leaflet-top .leaflet-control {
+	margin-top: 10px;
+	}
+.leaflet-bottom .leaflet-control {
+	margin-bottom: 10px;
+	}
+.leaflet-left .leaflet-control {
+	margin-left: 10px;
+	}
+.leaflet-right .leaflet-control {
+	margin-right: 10px;
+	}
+
+
+/* zoom and fade animations */
+
+.leaflet-fade-anim .leaflet-popup {
+	opacity: 0;
+	-webkit-transition: opacity 0.2s linear;
+	   -moz-transition: opacity 0.2s linear;
+	        transition: opacity 0.2s linear;
+	}
+.leaflet-fade-anim .leaflet-map-pane .leaflet-popup {
+	opacity: 1;
+	}
+.leaflet-zoom-animated {
+	-webkit-transform-origin: 0 0;
+	    -ms-transform-origin: 0 0;
+	        transform-origin: 0 0;
+	}
+svg.leaflet-zoom-animated {
+	will-change: transform;
+}
+
+.leaflet-zoom-anim .leaflet-zoom-animated {
+	-webkit-transition: -webkit-transform 0.25s cubic-bezier(0,0,0.25,1);
+	   -moz-transition:    -moz-transform 0.25s cubic-bezier(0,0,0.25,1);
+	        transition:         transform 0.25s cubic-bezier(0,0,0.25,1);
+	}
+.leaflet-zoom-anim .leaflet-tile,
+.leaflet-pan-anim .leaflet-tile {
+	-webkit-transition: none;
+	   -moz-transition: none;
+	        transition: none;
+	}
+
+.leaflet-zoom-anim .leaflet-zoom-hide {
+	visibility: hidden;
+	}
+
+
+/* cursors */
+
+.leaflet-interactive {
+	cursor: pointer;
+	}
+.leaflet-grab {
+	cursor: -webkit-grab;
+	cursor:    -moz-grab;
+	cursor:         grab;
+	}
+.leaflet-crosshair,
+.leaflet-crosshair .leaflet-interactive {
+	cursor: crosshair;
+	}
+.leaflet-popup-pane,
+.leaflet-control {
+	cursor: auto;
+	}
+.leaflet-dragging .leaflet-grab,
+.leaflet-dragging .leaflet-grab .leaflet-interactive,
+.leaflet-dragging .leaflet-marker-draggable {
+	cursor: move;
+	cursor: -webkit-grabbing;
+	cursor:    -moz-grabbing;
+	cursor:         grabbing;
+	}
+
+/* marker & overlays interactivity */
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-image-layer,
+.leaflet-pane > svg path,
+.leaflet-tile-container {
+	pointer-events: none;
+	}
+
+.leaflet-marker-icon.leaflet-interactive,
+.leaflet-image-layer.leaflet-interactive,
+.leaflet-pane > svg path.leaflet-interactive,
+svg.leaflet-image-layer.leaflet-interactive path {
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+
+/* visual tweaks */
+
+.leaflet-container {
+	background: #ddd;
+	outline-offset: 1px;
+	}
+.leaflet-container a {
+	color: #0078A8;
+	}
+.leaflet-zoom-box {
+	border: 2px dotted #38f;
+	background: rgba(255,255,255,0.5);
+	}
+
+
+/* general typography */
+.leaflet-container {
+	font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+	font-size:16px;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	}
+
+
+/* general toolbar styles */
+
+.leaflet-bar {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+	border-radius: 4px;
+	}
+.leaflet-bar a {
+	background-color: #fff;
+	border-bottom: 1px solid #ccc;
+	width: 26px;
+	height: 26px;
+	line-height: 26px;
+	display: block;
+	text-align: center;
+	text-decoration: none;
+	color: black;
+	}
+.leaflet-bar a,
+.leaflet-control-layers-toggle {
+	background-position: 50% 50%;
+	background-repeat: no-repeat;
+	display: block;
+	}
+.leaflet-bar a:hover,
+.leaflet-bar a:focus {
+	background-color: #f4f4f4;
+	}
+.leaflet-bar a:first-child {
+	border-top-left-radius: 4px;
+	border-top-right-radius: 4px;
+	}
+.leaflet-bar a:last-child {
+	border-bottom-left-radius: 4px;
+	border-bottom-right-radius: 4px;
+	border-bottom: none;
+	}
+.leaflet-bar a.leaflet-disabled {
+	cursor: default;
+	background-color: #f4f4f4;
+	color: #bbb;
+	}
+
+.leaflet-touch .leaflet-bar a {
+	width: 30px;
+	height: 30px;
+	line-height: 30px;
+	}
+.leaflet-touch .leaflet-bar a:first-child {
+	border-top-left-radius: 2px;
+	border-top-right-radius: 2px;
+	}
+.leaflet-touch .leaflet-bar a:last-child {
+	border-bottom-left-radius: 2px;
+	border-bottom-right-radius: 2px;
+	}
+
+/* zoom control */
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+	font: bold 18px 'Lucida Console', Monaco, monospace;
+	text-indent: 1px;
+	}
+
+.leaflet-touch .leaflet-control-zoom-in, .leaflet-touch .leaflet-control-zoom-out  {
+	font-size: 22px;
+	}
+
+
+/* layers control */
+
+.leaflet-control-layers {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+	background: #fff;
+	border-radius: 5px;
+	}
+.leaflet-control-layers-toggle {
+	background-image: url(images/layers.png);
+	width: 36px;
+	height: 36px;
+	}
+.leaflet-retina .leaflet-control-layers-toggle {
+	background-image: url(images/layers-2x.png);
+	background-size: 26px 26px;
+	}
+.leaflet-touch .leaflet-control-layers-toggle {
+	width: 44px;
+	height: 44px;
+	}
+.leaflet-control-layers .leaflet-control-layers-list,
+.leaflet-control-layers-expanded .leaflet-control-layers-toggle {
+	display: none;
+	}
+.leaflet-control-layers-expanded .leaflet-control-layers-list {
+	display: block;
+	position: relative;
+	}
+.leaflet-control-layers-expanded {
+	padding: 6px 10px 6px 6px;
+	color: #333;
+	background: #fff;
+	}
+.leaflet-control-layers-scrollbar {
+	overflow-y: scroll;
+	overflow-x: hidden;
+	padding-right: 5px;
+	}
+.leaflet-control-layers-selector {
+	margin-top: 2px;
+	position: relative;
+	top: 1px;
+	}
+.leaflet-control-layers label {
+	display: block;
+	font-size:15px;
+	font-size: 1.08333em;
+	}
+.leaflet-control-layers-separator {
+	height: 0;
+	border-top: 1px solid #ddd;
+	margin: 5px -10px 5px -6px;
+	}
+
+/* Default icon URLs */
+.leaflet-default-icon-path { /* used only in path-guessing heuristic, see L.Icon.Default */
+	background-image: url(images/marker-icon.png);
+	}
+
+
+/* attribution and scale controls */
+
+.leaflet-container .leaflet-control-attribution {
+	background: #fff;
+	background: rgba(255, 255, 255, 0.8);
+	margin: 0;
+	}
+.leaflet-control-attribution,
+.leaflet-control-scale-line {
+	padding: 0 5px;
+	color: #333;
+	line-height: 1.4;
+	}
+.leaflet-control-attribution a {
+	text-decoration: none;
+	}
+.leaflet-control-attribution a:hover,
+.leaflet-control-attribution a:focus {
+	text-decoration: underline;
+	}
+.leaflet-attribution-flag {
+	display: inline !important;
+	vertical-align: baseline !important;
+	width: 1em;
+	height: 0.6669em;
+	}
+.leaflet-left .leaflet-control-scale {
+	margin-left: 5px;
+	}
+.leaflet-bottom .leaflet-control-scale {
+	margin-bottom: 5px;
+	}
+.leaflet-control-scale-line {
+	border: 2px solid #777;
+	border-top: none;
+	line-height: 1.1;
+	padding: 2px 5px 1px;
+	white-space: nowrap;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	background: rgba(255, 255, 255, 0.8);
+	text-shadow: 1px 1px #fff;
+	}
+.leaflet-control-scale-line:not(:first-child) {
+	border-top: 2px solid #777;
+	border-bottom: none;
+	margin-top: -2px;
+	}
+.leaflet-control-scale-line:not(:first-child):not(:last-child) {
+	border-bottom: 2px solid #777;
+	}
+
+.leaflet-touch .leaflet-control-attribution,
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	box-shadow: none;
+	}
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	border: 2px solid rgba(0,0,0,0.2);
+	background-clip: padding-box;
+	}
+
+
+/* popup */
+
+.leaflet-popup {
+	position: absolute;
+	text-align: center;
+	margin-bottom: 20px;
+	}
+.leaflet-popup-content-wrapper {
+	padding: 1px;
+	text-align: left;
+	border-radius: 12px;
+	}
+.leaflet-popup-content {
+	margin: 13px 24px 13px 20px;
+	line-height: 1.3;
+	font-size:15px;
+	font-size: 1.08333em;
+	min-height: 1px;
+	}
+.leaflet-popup-content p {
+	margin: 17px 0;
+	margin: 1.3em 0;
+	}
+.leaflet-popup-tip-container {
+	width: 40px;
+	height: 20px;
+	position: absolute;
+	left: 50%;
+	margin-top: -1px;
+	margin-left: -20px;
+	overflow: hidden;
+	pointer-events: none;
+	}
+.leaflet-popup-tip {
+	width: 17px;
+	height: 17px;
+	padding: 1px;
+
+	margin: -10px auto 0;
+	pointer-events: auto;
+
+	-webkit-transform: rotate(45deg);
+	   -moz-transform: rotate(45deg);
+	    -ms-transform: rotate(45deg);
+	        transform: rotate(45deg);
+	}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+	background: white;
+	color: #333;
+	box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+	}
+.leaflet-container a.leaflet-popup-close-button {
+	position: absolute;
+	top: 0;
+	right: 0;
+	border: none;
+	text-align: center;
+	width: 24px;
+	height: 24px;
+	font: 16px/24px Tahoma, Verdana, sans-serif;
+	color: #757575;
+	text-decoration: none;
+	background: transparent;
+	}
+.leaflet-container a.leaflet-popup-close-button:hover,
+.leaflet-container a.leaflet-popup-close-button:focus {
+	color: #585858;
+	}
+.leaflet-popup-scrolled {
+	overflow: auto;
+	}
+
+.leaflet-oldie .leaflet-popup-content-wrapper {
+	-ms-zoom: 1;
+	}
+.leaflet-oldie .leaflet-popup-tip {
+	width: 24px;
+	margin: 0 auto;
+
+	-ms-filter: "progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678)";
+	filter: progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678);
+	}
+
+.leaflet-oldie .leaflet-control-zoom,
+.leaflet-oldie .leaflet-control-layers,
+.leaflet-oldie .leaflet-popup-content-wrapper,
+.leaflet-oldie .leaflet-popup-tip {
+	border: 1px solid #999;
+	}
+
+
+/* div icon */
+
+.leaflet-div-icon {
+	background: #fff;
+	border: 1px solid #666;
+	}
+
+
+/* Tooltip */
+/* Base styles for the element that has a tooltip */
+.leaflet-tooltip {
+	position: absolute;
+	padding: 6px;
+	background-color: #fff;
+	border: 1px solid #fff;
+	border-radius: 3px;
+	color: #222;
+	white-space: nowrap;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	pointer-events: none;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+	}
+.leaflet-tooltip.leaflet-interactive {
+	cursor: pointer;
+	pointer-events: auto;
+	}
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	position: absolute;
+	pointer-events: none;
+	border: 6px solid transparent;
+	background: transparent;
+	content: "";
+	}
+
+/* Directions */
+
+.leaflet-tooltip-bottom {
+	margin-top: 6px;
+}
+.leaflet-tooltip-top {
+	margin-top: -6px;
+}
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-top:before {
+	left: 50%;
+	margin-left: -6px;
+	}
+.leaflet-tooltip-top:before {
+	bottom: 0;
+	margin-bottom: -12px;
+	border-top-color: #fff;
+	}
+.leaflet-tooltip-bottom:before {
+	top: 0;
+	margin-top: -12px;
+	margin-left: -6px;
+	border-bottom-color: #fff;
+	}
+.leaflet-tooltip-left {
+	margin-left: -6px;
+}
+.leaflet-tooltip-right {
+	margin-left: 6px;
+}
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	top: 50%;
+	margin-top: -6px;
+	}
+.leaflet-tooltip-left:before {
+	right: 0;
+	margin-right: -12px;
+	border-left-color: #fff;
+	}
+.leaflet-tooltip-right:before {
+	left: 0;
+	margin-left: -12px;
+	border-right-color: #fff;
+	}
+
+/* Printing */
+
+@media print {
+	/* Prevent printers from removing background-images of controls. */
+	.leaflet-control {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+		}
+	}
+
+/* MOBILE FIX */
+@media (max-width:768px) {
+  #map { height:100dvh !important; min-height:420px !important; }
+  #zone-sidebar { max-height:30vh; min-height:60px; display:block !important; }
+  body.karyk-active #zone-sidebar { display:none !important; }
+  body.karyk-active #karyk-sidebar { display:block !important; max-height:30vh; overflow-y:auto; }
+  .sidebar-title { font-size:13px; padding:6px 12px; }
+}
+
+/* LIST VIEW MODE */
+body.list-view #map { display:none !important; }
+body.list-view.karyk-active #zone-sidebar { display:none !important; }
+body.list-view.karyk-active #karyk-sidebar { display:block !important; max-height:calc(100vh - 220px); overflow-y:auto; }
+body.list-view #zone-sidebar {
+  max-height: calc(100vh - 280px) !important;
+  min-height: 200px !important;
+}
+body.list-view #toggle-map-btn {
+  background: var(--amber) !important;
+  color: #000 !important;
+}
+.zone-item {
+  padding: 10px 14px !important;
+  font-size: 15px !important;
+}
+.zone-item .zone-name { font-weight: 700; font-size: 15px; }
+.zone-item .zone-sub  { font-size: 13px; color: var(--muted); }
+
+
+/* ═══════ РАДИАЛНО МЕНЮ (FAB) ═══════ */
+#fab-wrap{
+  position:fixed; right:38px; bottom:150px;
+  width:0; height:0; z-index:1600;
+}
+#fab-hub{
+  position:absolute; left:0; top:0;
+  width:64px; height:64px; margin-left:-32px; margin-top:-32px;
+  border-radius:50%; cursor:pointer;
+  background:linear-gradient(145deg,#12203a,#0a1120);
+  border:2px solid var(--cyan);
+  color:var(--cyan); font-size:27px; line-height:1;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 4px 18px rgba(0,0,0,.65), 0 0 14px rgba(34,211,238,.25);
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1), border-color .2s, box-shadow .2s;
+  -webkit-tap-highlight-color:transparent; user-select:none;
+}
+#fab-hub:active{ transform:scale(.92); }
+#fab-rays{
+  position:absolute; left:0; top:0; width:1px; height:1px;
+  overflow:visible; pointer-events:none;
+  opacity:0; transition:opacity .22s;
+}
+#fab-backdrop{
+  position:fixed; inset:0; z-index:1590;
+  background:rgba(3,7,18,.45); backdrop-filter:blur(1.5px);
+  opacity:0; pointer-events:none; transition:opacity .22s;
+}
+
+/* сателитите — оригиналните бутони, преместени в орбита */
+#fab-wrap .fab-sat{
+  position:absolute !important;
+  right:auto !important; bottom:auto !important;
+  width:76px !important; height:76px !important;
+  margin-left:-38px !important; margin-top:-38px !important;
+  border-radius:50% !important;
+  display:flex !important; align-items:center; justify-content:center;
+  font-size:15px !important; line-height:1 !important;
+  padding:0 !important;
+  writing-mode:horizontal-tb !important;
+  letter-spacing:0 !important; white-space:nowrap !important;
+  opacity:0; pointer-events:none;
+  transform:none !important;
+  transition:left .28s cubic-bezier(.34,1.4,.64,1), top .28s cubic-bezier(.34,1.4,.64,1), opacity .2s;
+}
+#fab-wrap #karyk-btn, #fab-wrap #karyk-list-btn, #fab-wrap #clean-btn{
+  transform:none !important; transform-origin:center center !important;
+  text-orientation:mixed !important; writing-mode:horizontal-tb !important;
+  font-size:32px !important; width:76px !important; height:76px !important;
+  min-width:0 !important; max-width:76px !important;
+  padding:0 !important; box-sizing:border-box !important;
+}
+.fab-label{
+  position:absolute; opacity:0; pointer-events:none;
+  background:#0b1220ee; color:#e2e8f0;
+  border:1px solid var(--border); border-radius:7px;
+  padding:7px 11px; font:800 13px system-ui,sans-serif;
+  white-space:nowrap; transform:translate(-100%,-50%);
+  transition:opacity .2s, left .28s cubic-bezier(.34,1.4,.64,1), top .28s cubic-bezier(.34,1.4,.64,1);
+  box-shadow:0 2px 10px rgba(0,0,0,.5);
+}
+/* в fullscreen скриваме само тези, които и преди се скриваха */
+body.map-fullscreen #fab-wrap #bakshish-btn,
+body.map-fullscreen #fab-wrap #next90-btn,
+body.map-fullscreen .fab-label[data-for="bakshish-btn"],
+body.map-fullscreen .fab-label[data-for="next90-btn"]{ display:none !important; }
+@media (max-width:370px){ .fab-label{ font-size:12px; padding:6px 9px; } }
+
+/* ═══ ЧИСТА КАРТА — видим ефект, не само надписи ═══ */
+body.map-clean .leaflet-overlay-pane{ opacity:.18 !important; transition:opacity .25s; }
+body.map-clean .leaflet-marker-pane{ opacity:.55 !important; transition:opacity .25s; }
+
+/* ═══════ КАРЪК = НЕГАТИВЪТ НА ЗЛАТНИЯ РЕЖИМ ═══════
+   Две независими оси:
+   • РЕЖИМ (златен / карък) — сменя КАРТАТА и АКЦЕНТИТЕ (тук)
+   • ТЕМА (дневна / нощна)  — сменя ХРОМА (заглавие, панели) — остава свободна
+   Затова карък не „изяжда" бъдещата нощна тема.                        */
+/* картата остава четима — потъмняването убива смисъла ѝ */
+/* дебела бронзова линия с неонов пулс около целия екран */
+body.karyk-active::after{
+  content:''; position:fixed; inset:0; z-index:2400; pointer-events:none;
+  border:7px solid var(--bronze); border-radius:4px;
+  animation:karyk-neon 2.6s ease-in-out infinite;
+}
+@keyframes karyk-neon{
+  0%,100%{ box-shadow:inset 0 0 10px var(--bronze-soft), 0 0 6px var(--bronze-soft); opacity:.88; }
+  50%    { box-shadow:inset 0 0 26px var(--bronze-hot), inset 0 0 54px var(--bronze-soft), 0 0 18px var(--bronze-hot); opacity:1; }
+}
+#karyk-badge{
+  display:none; position:fixed; z-index:2500;
+  left:50%; transform:translateX(-50%); bottom:14px;
+  background:var(--glass); color:var(--bronze);
+  backdrop-filter:saturate(180%) blur(14px);
+  border:1.5px solid var(--bronze); border-radius:999px;
+  padding:7px 16px; cursor:pointer;
+  font:800 12px 'Courier New',Courier,monospace; letter-spacing:.5px;
+  box-shadow:0 3px 16px rgba(0,0,0,.7), 0 0 18px rgba(205,127,50,.3);
+  white-space:nowrap;
+}
+body.karyk-active #fab-hub{ border-color:var(--bronze) !important; color:var(--bronze) !important; }
+body.karyk-active /* зоните в карък: бронз вместо злато */
+body.karyk-active .sidebar-title{ color:#e8a050; }
+
+/* връзка етикет → икона в радиалното меню */
+
+/* бакшиш: компактни редове (като карък списъка) */
+#bakshish-panel .bp-item{ padding:6px 12px !important; gap:8px !important; }
+#bakshish-panel .bp-name{ font-size:13px !important; line-height:1.25 !important; }
+#bakshish-panel .bp-score{ font-size:16px !important; }
+#bakshish-panel .bp-rank{ font-size:11px !important; min-width:22px !important; }
+
+/* ═══ Летищен попъп: винаги видим Х + без дърпане на картата ═══ */
+.airport-popup .leaflet-popup-close-button{
+  position:absolute !important; top:8px !important; right:8px !important; z-index:20 !important;
+  width:36px !important; height:36px !important; line-height:34px !important;
+  font-size:22px !important; font-weight:700 !important; text-align:center !important;
+  background:#0b1220f2 !important; color:#fff !important;
+  border:1.5px solid var(--cyan) !important; border-radius:50% !important;
+  box-shadow:0 2px 10px rgba(0,0,0,.6) !important; padding:0 !important;
+}
+.airport-popup .leaflet-popup-content{ margin:14px 12px 12px !important; }
+.airport-popup .leaflet-popup-content-wrapper{ overscroll-behavior:contain; }
+#fl-scroll{ overscroll-behavior:contain; touch-action:pan-y; }
+
+/* ═══ Летищен прозорец — независим от картата, винаги цял на екрана ═══ */
+#airport-modal{
+  display:none; position:fixed; inset:0; z-index:3000;
+  background:rgba(2,6,16,.78); backdrop-filter:blur(3px);
+  align-items:center; justify-content:center; padding:14px;
+}
+#airport-modal-box{
+  width:100%; max-width:430px; max-height:82vh;
+  display:flex; flex-direction:column;
+  background:var(--modal-bg);
+  color:var(--text);
+  border:1.5px solid var(--modal-edge); border-radius:20px;
+  box-shadow:var(--modal-shadow);
+  backdrop-filter:var(--modal-blur);
+  overflow:hidden;
+}
+#airport-modal-head{
+  flex-shrink:0; display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:13px 14px; border-bottom:1px solid var(--modal-edge);
+  font:800 15.5px -apple-system,system-ui,sans-serif; color:var(--cyan);
+  background:var(--modal-head);
+  text-shadow:var(--glow);
+}
+#airport-modal-x{
+  width:40px; height:40px; flex-shrink:0; border-radius:50%;
+  background:var(--surface); color:var(--text); border:1.5px solid var(--cyan);
+  font-size:20px; font-weight:600; line-height:1; cursor:pointer;
+}
+#airport-modal-body{
+  overflow-y:auto; overscroll-behavior:contain;
+  padding:10px 12px 14px;
+}
+#airport-modal-body #fl-scroll{ max-height:none !important; overflow:visible !important; }
+
+/* ═══ Четимост и неон в летищния прозорец ═══ */
+#airport-modal-body{ color:#dbe6f5; }
+#airport-modal-body div[style*="ИЗЛИЗА"], #airport-modal-body .fl-now{ }
+#airport-modal-body b, #airport-modal-body span[style*="font-weight:800"]{ color:#f1f6ff; }
+@keyframes fl-pulse{
+  0%,100%{ box-shadow:0 0 0 rgba(239,68,68,0); }
+  50%    { box-shadow:0 0 14px rgba(239,68,68,.55), inset 0 0 10px rgba(239,68,68,.18); }
+}
+#fl-now-anchor, #airport-modal-body [data-now="1"]{
+  animation:fl-pulse 1.9s ease-in-out infinite;
+}
+
+/* ═══ 2026: движение и стъкло ═══ */
+@keyframes rise{ from{ opacity:0; transform:translateY(10px) scale(.985) } to{ opacity:1; transform:none } }
+#airport-modal-box, #bakshish-panel, #next90-panel, #exit-now-panel{
+  animation:rise .28s var(--ease) both;
+}
+.leaflet-popup-content-wrapper{ animation:rise .22s var(--ease) both; }
+.zone-row{ transition:transform .18s var(--ease), box-shadow .18s var(--ease); }
+.zone-row:active{ transform:scale(.98); box-shadow:0 1px 4px rgba(0,0,0,.18); }
+#bakshish-panel, #next90-panel, #exit-now-panel, #zone-sidebar, #karyk-sidebar{
+  background:var(--glass) !important;
+  backdrop-filter:saturate(170%) blur(16px);
+  -webkit-backdrop-filter:saturate(170%) blur(16px);
+  border:1px solid var(--glass-edge) !important;
+}
+/* лек блясък по горния ръб на стъклото */
+.header::after, #weather-bar::after{
+  content:''; position:absolute; left:0; right:0; top:0; height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);
+  pointer-events:none;
+}
+.header, #weather-bar{ position:relative; }
+body.theme-night .header::after, body.theme-night #weather-bar::after{
+  background:linear-gradient(90deg,transparent,rgba(34,211,238,.45),transparent);
+}
+
+/* ═══════ OVERLAY СЦЕНА: картата минава под стъклените ленти ═══════ */
+#stage{ position:relative; }
+#topstack{
+  position:absolute; top:0; left:0; right:0; z-index:1200;
+  pointer-events:none;                     /* прозрачните полета пропускат картата */
+}
+#topstack > *{ pointer-events:auto; }
+#map{
+  height:100dvh !important;
+  min-height:420px;
+}
+/* лентите вече плуват — по-меки ръбове, без плътни линии */
+.header, #weather-bar, .timeline-panel, .ticker-bar{
+  border-bottom:1px solid var(--glass-edge) !important;
+}
+.timeline-panel{
+  background:var(--glass) !important;
+  backdrop-filter:saturate(170%) blur(16px);
+  -webkit-backdrop-filter:saturate(170%) blur(16px);
+}
+
+/* ═══ 3D панели ═══ */
+#topstack{ perspective:1200px; }
+.header, #weather-bar, .timeline-panel{
+  transform-style:preserve-3d;
+  animation:panel-in .5s var(--ease) both;
+}
+#weather-bar{ animation-delay:.06s }
+.timeline-panel{ animation-delay:.12s }
+@keyframes panel-in{
+  from{ opacity:0; transform:translateY(-14px) rotateX(-12deg); transform-origin:top center; }
+  to  { opacity:1; transform:none; }
+}
+/* меко повдигане на стъклото */
+.header{ box-shadow:0 6px 20px rgba(15,27,45,.10); }
+body.theme-night .header{ box-shadow:0 6px 22px rgba(0,0,0,.5), 0 0 24px rgba(34,211,238,.10); }
+
+/* ═══ бутонът за темата — на нивото на времето ═══ */
+#theme-btn{ top:56px !important; right:10px !important; }
+
+/* ═══ НИЩО ТЪМНО В СВЕТЛАТА ТЕМА ═══ */
+/* ветрилото: надписи и бутони по темата */
+.fab-label{
+  background:var(--glass) !important;
+  color:var(--text) !important;
+  border:1px solid var(--glass-edge) !important;
+  backdrop-filter:saturate(180%) blur(14px);
+  -webkit-backdrop-filter:saturate(180%) blur(14px);
+  box-shadow:var(--card) !important;
+}
+#fab-hub{
+  background:var(--glass) !important;
+  color:var(--cyan) !important;
+  border:2px solid var(--cyan) !important;
+  backdrop-filter:saturate(180%) blur(14px);
+}
+#fab-wrap .fab-sat{
+  background:var(--surface) !important;
+  color:var(--text) !important;
+  border:1.5px solid var(--glass-edge) !important;
+  box-shadow:var(--card) !important;
+}
+body.theme-night #fab-wrap .fab-sat{
+  background:#12203a !important; border-color:rgba(34,211,238,.3) !important;
+}
+#fab-backdrop{ background:var(--scrim) !important; }
+
+/* долните ляви чипове */
+#clean-btn, #karyk-list-btn, .map-chip{
+  background:var(--glass) !important;
+  color:var(--text) !important;
+  border:1px solid var(--glass-edge) !important;
+  backdrop-filter:saturate(170%) blur(14px) !important;
+  -webkit-backdrop-filter:saturate(170%) blur(14px) !important;
+  box-shadow:var(--card) !important;
+  border-radius:12px !important;
+}
+body.theme-night .map-chip{ box-shadow:var(--card), 0 0 14px rgba(34,211,238,.12) !important; }
+
+/* бакшиш панелът: четими цветове и в двете теми */
+#bakshish-panel .bp-name, #bakshish-panel .bp-rank{ color:var(--text) !important; }
+#bakshish-panel .bp-shift, #bakshish-panel .bp-shift *{ color:var(--gold) !important; }
+#bakshish-panel .bp-item{ border-bottom:1px solid var(--glass-edge) !important; }
+body.theme-day #bakshish-panel .bp-item{ background:rgba(255,255,255,.35) !important; }
+
+/* ═══ подреден стек с чипове долу вляво ═══ */
+#chip-stack{
+  position:fixed; left:8px; bottom:8px; z-index:1500;
+  display:flex; flex-direction:column-reverse; gap:6px;
+  max-width:62vw; pointer-events:none;
+}
+/* списъкът да може да се доскролва изпод ветрилото */
+#zone-sidebar, #karyk-sidebar{ padding-bottom:96px; }
+
+/* лентата — изрично по тема, за да не зависи от реда на правилата */
+body.theme-day  .ticker-bar{ background:rgba(255,255,255,.72) !important; }
+body.theme-day  .tick-item{ color:#0f1b2d !important; }
+body.theme-night .ticker-bar{ background:rgba(6,16,28,.72) !important; }
+body.theme-night .tick-item{ color:#e8eef7 !important; }
+
+/* Бакшиш радарът е излишен — дублира долния списък */
+#bakshish-btn, #bakshish-panel{ display:none !important; }
+
+/* ═══ Списъкът плува над картата: 3 реда, отдолу пак карта ═══ */
+#stage{ min-height:100vh; }
+#zone-sidebar, #karyk-sidebar{
+  position:absolute !important; left:8px; right:8px; bottom:132px; z-index:1150;
+  max-height:33vh !important; min-height:0 !important;
+  overflow-y:auto; overscroll-behavior:contain;
+  padding:0 0 6px !important;
+  background:var(--glass) !important;
+  border:1px solid var(--glass-edge) !important;
+  border-radius:18px;
+  backdrop-filter:saturate(180%) blur(18px);
+  -webkit-backdrop-filter:saturate(180%) blur(18px);
+  box-shadow:var(--modal-shadow);
+}
+#zone-sidebar .sidebar-title, #karyk-sidebar .sidebar-title{
+  position:sticky; top:0; z-index:3;
+  background:var(--glass); backdrop-filter:saturate(180%) blur(18px);
+  border-bottom:1px solid var(--glass-edge);
+  border-radius:18px 18px 0 0;
+}
+/* в режим „списък" заема целия екран както преди */
+body.list-view #zone-sidebar, body.list-view #karyk-sidebar{
+  position:static !important; max-height:none !important; border-radius:0; bottom:auto;
+}
+
+/* нощна карта: обръщаме САМО плочките, маркерите остават верни */
+
+/* ═══ ветрилото с 6 бутона: по-едри надписи ═══ */
+.fab-label{ font:800 16px -apple-system,system-ui,sans-serif !important; padding:10px 15px !important; border-radius:12px !important; }
+
+
+/* ═══ Списъкът: сгънат по подразбиране, разгъва се от бутон долу вляво ═══ */
+#zone-sidebar{
+  transform:translateY(calc(100% + 24px));
+  opacity:0; pointer-events:none;
+  transition:transform .38s var(--ease), opacity .26s var(--ease);
+  will-change:transform;
+}
+body.sheet-zones #zone-sidebar{
+  transform:none; opacity:1; pointer-events:auto;
+}
+/* карък списъкът е самостоятелен — свой скрол, своя позиция */
+#karyk-sidebar{
+  bottom:132px !important;
+  transform:translateY(calc(100% + 24px));
+  opacity:0; pointer-events:none;
+  transition:transform .38s var(--ease), opacity .26s var(--ease);
+}
+body.sheet-karyk #karyk-sidebar{
+  transform:none; opacity:1; pointer-events:auto;
+}
+/* когато и двата са отворени, карък застава над зоните */
+body.sheet-zones.sheet-karyk #karyk-sidebar{ bottom:calc(33vh + 146px) !important; }
+
+/* бутоните за разгъване */
+.sheet-btn{
+  display:flex; align-items:center; gap:7px;
+  padding:9px 14px; border-radius:999px; cursor:pointer;
+  font:800 13.5px -apple-system,system-ui,sans-serif;
+  white-space:nowrap; user-select:none;
+  transition:transform .2s var(--ease);
+}
+.sheet-btn:active{ transform:scale(.94); }
+.sheet-btn .caret{ transition:transform .3s var(--ease); display:inline-block; }
+body.sheet-zones #btn-zones .caret{ transform:rotate(180deg); }
+body.sheet-karyk #btn-karyk .caret{ transform:rotate(180deg); }
+#btn-karyk{ color:var(--bronze) !important; border-color:var(--bronze) !important; }
+body:not(.karyk-active) #btn-karyk{ display:none; }
+
+/* в режим „списък" всичко е разгънато и статично */
+body.list-view #zone-sidebar, body.list-view #karyk-sidebar{
+  transform:none !important; opacity:1 !important; pointer-events:auto !important;
+}
+body.list-view .sheet-btn{ display:none !important; }
+
+/* ═══ КАРЪК РЕЖИМЪТ Е ПРЕМАХНАТ ═══
+   Претоварваше картата и подвеждаше. Кодът остава, но нищо не се показва. */
+#karyk-btn, #karyk-list-btn, #karyk-sidebar, #karyk-banner, #karyk-badge,
+#karyk-corner-tr, #karyk-corner-bl, #btn-karyk{ display:none !important; }
+body.karyk-active::after{ display:none !important; content:none !important; }
+body.karyk-active #map{ filter:none !important; }
+
+/* ═══ Вътрешен пръстен: дестинациите — по-едри и по-близо до палеца ═══ */
+#fab-wrap .fab-dest:active{ transform:scale(.92) !important; }
+body.theme-night body.theme-night /* инструментите отвън — по-дискретни */
+#fab-wrap .fab-sat:not(.fab-dest){
+  width:48px !important; height:48px !important;
+  margin-left:-24px !important; margin-top:-24px !important;
+  max-width:48px !important; font-size:21px !important;
+  opacity:.92;
+}
+.fab-label:not(.fab-dest-label){
+  font:700 12.5px -apple-system,system-ui,sans-serif !important;
+  padding:6px 10px !important; opacity:.9;
+}
+/* лек пулс на дестинациите, за да личи че водят нанякъде */
+}
+
+/* нощна карта върху подробните OSM плочки — обръщаме само тях */
+body.tiles-dark .leaflet-tile-pane{
+  filter:invert(1) hue-rotate(180deg) brightness(.94) contrast(.90) saturate(.78);
+}
+
+/* ═══ Инструментите излизат от ветрилото: спретната колона вдясно ═══ */
+#next90-btn, #clean-btn, #gps-btn, #fs-btn{
+  position:fixed !important; right:12px !important; left:auto !important; top:auto !important;
+  width:44px !important; height:44px !important; max-width:44px !important;
+  border-radius:50% !important; padding:0 !important;
+  display:flex !important; align-items:center; justify-content:center;
+  font-size:19px !important; line-height:1 !important;
+  background:var(--glass) !important; color:var(--text) !important;
+  border:1px solid var(--glass-edge) !important;
+  backdrop-filter:saturate(175%) blur(14px);
+  -webkit-backdrop-filter:saturate(175%) blur(14px);
+  box-shadow:var(--card) !important;
+  z-index:1500 !important; writing-mode:horizontal-tb !important;
+  transition:transform .18s var(--ease);
+}
+#next90-btn:active, #clean-btn:active, #gps-btn:active, #fs-btn:active{ transform:scale(.9); }
+/* горе вдясно, под лентите — извън обсега на палеца и на ветрилото */
+body.map-fullscreen #next90-btn{ display:none !important; }
+
+#exit-now-panel{ color:var(--text) !important; }
+#exit-now-panel > div:first-child{ color:var(--cyan) !important; }
+#exit-now-panel b{ color:var(--text) !important; }
+
+/* по-висока специфичност — по-ранните правила за .fab-sat го надвиваха */
+
+/* ═══════ Една стъклена колона вдясно ═══════
+   Ред: инструменти → дестинации → списък                      */
+#next90-btn, #clean-btn, #gps-btn, #fs-btn, .tool-btn{
+  position:fixed !important; right:12px !important; left:auto !important; bottom:auto !important;
+  width:48px !important; height:48px !important; max-width:48px !important; min-width:48px !important;
+  border-radius:16px !important; padding:0 !important;
+  display:flex !important; align-items:center !important; justify-content:center !important;
+  font-size:22px !important; line-height:1 !important;
+  color:var(--text) !important;
+  background:var(--glass) !important;
+  border:0 !important;
+  box-shadow:
+    0 6px 18px rgba(15,27,45,.20),
+    0 1px 0 rgba(255,255,255,.75) inset,
+    0 0 0 1px var(--glass-edge) !important;
+  backdrop-filter:saturate(180%) blur(16px);
+  -webkit-backdrop-filter:saturate(180%) blur(16px);
+  z-index:1500 !important; writing-mode:horizontal-tb !important;
+  transition:transform .16s var(--ease), box-shadow .2s var(--ease);
+  cursor:pointer;
+}
+body.theme-night #next90-btn, body.theme-night #clean-btn,
+body.theme-night #gps-btn, body.theme-night #fs-btn, body.theme-night .tool-btn{
+  box-shadow:
+    0 6px 20px rgba(0,0,0,.55),
+    0 1px 0 rgba(255,255,255,.08) inset,
+    0 0 0 1px var(--dest-ring) !important;
+}
+.tool-btn:active, #gps-btn:active, #fs-btn:active,
+#clean-btn:active, #next90-btn:active{ transform:scale(.9) !important; }
+/* дестинациите — с циан пръстен, за да личат от инструментите */
+.dest-btn{ box-shadow:
+    0 6px 18px rgba(15,27,45,.22),
+    0 1px 0 rgba(255,255,255,.8) inset,
+    0 0 0 2px var(--dest-ring) !important; }
+
+/* подредба: инструменти, после дестинации, накрая списък */
+
+/* ═══ картата стига до долу ═══ */
+#map{ height:100dvh !important; min-height:420px !important; }
+#stage{ min-height:100dvh; }
+#zone-sidebar, #karyk-sidebar{ bottom:14px !important; max-height:42vh !important; }
+
+/* ═══ панелите: светли в дневната тема ═══ */
+#next90-panel, #next90-panel .n90-header, #exit-now-panel{
+  background:var(--glass) !important; color:var(--text) !important;
+  border:1px solid var(--glass-edge) !important;
+  backdrop-filter:saturate(180%) blur(18px);
+  -webkit-backdrop-filter:saturate(180%) blur(18px);
+}
+#next90-panel .n90-header{ color:var(--cyan) !important; }
+/* Waze / Google бутоните в попъпа */
+.leaflet-popup-content a, .leaflet-popup-content button,
+.zp-nav, .zp-nav a, .zp-nav button{
+  background:var(--glass) !important; color:var(--text) !important;
+  border:1px solid var(--glass-edge) !important;
+  backdrop-filter:saturate(170%) blur(12px);
+}
+
+/* ═════════ ФИНАЛНА ПОДРЕДБА — правилата тук са последни и печелят ═════════ */
+
+/* 1. Никакво празно място под картата */
+html, body{ height:100%; overflow:hidden !important; }
+#stage{ height:100dvh !important; min-height:0 !important; overflow:hidden; }
+#map{ height:100dvh !important; }
+
+/* 2. „Зони" долу вляво отпада — има го в колоната */
+#btn-zones{ display:none !important; }
+
+/* 3. Списъкът на ЦЯЛ ЕКРАН */
+body.full-list #zone-sidebar{
+  position:fixed !important; inset:auto 0 0 0 !important;
+  top:var(--stack-h,238px) !important;
+  left:0 !important; right:0 !important; bottom:0 !important;
+  max-height:none !important; height:auto !important;
+  border-radius:20px 20px 0 0 !important;
+  transform:none !important; opacity:1 !important; pointer-events:auto !important;
+  overflow-y:auto !important; z-index:2200 !important;
+  padding-bottom:24px !important;
+  animation:rise .3s var(--ease) both;
+}
+body:not(.full-list) #zone-sidebar{
+  transform:translateY(calc(100% + 30px)) !important; opacity:0 !important; pointer-events:none !important;
+}
+/* колоната остава достъпна над списъка */
+.tool-btn, #next90-btn, #clean-btn, #gps-btn, #fs-btn{ z-index:2400 !important; }
+.dest-btn.on{ box-shadow:0 0 0 3px var(--cyan), 0 6px 20px rgba(15,27,45,.28) !important; }
+
+/* 4. Попъпите на локациите — светли в дневната тема */
+.leaflet-popup-content-wrapper, .leaflet-popup-tip{
+  background:var(--modal-bg) !important; color:var(--text) !important;
+}
+.leaflet-popup-content, .leaflet-popup-content *{ color:var(--text); }
+.leaflet-popup-content b, .leaflet-popup-content strong{ color:var(--text) !important; }
+body.theme-day .leaflet-popup-content [style*="background:#0"],
+body.theme-day .leaflet-popup-content [style*="background:#1"],
+body.theme-day .leaflet-popup-content [style*="background:rgba(0"]{
+  background:rgba(255,255,255,.55) !important; color:var(--text) !important;
+}
+
+/* 5. Летищният прозорец — на цял екран под лентите */
+#airport-modal{ align-items:stretch !important; padding:0 !important; }
+#airport-modal-box{
+  max-width:none !important; width:100% !important;
+  margin-top:var(--stack-h,238px) !important;
+  max-height:calc(100dvh - var(--stack-h,238px)) !important;
+  border-radius:20px 20px 0 0 !important;
+}
+
+/* 6. Времето — тиха, но жива анимация */
+#weather-bar{ position:relative; overflow:hidden; }
+#weather-bar::before{
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.55) 45%,transparent 70%);
+  transform:translateX(-120%);
+  animation:wx-sheen 7s var(--ease) infinite;
+}
+body.theme-night #weather-bar::before{
+  background:linear-gradient(100deg,transparent 20%,rgba(34,211,238,.22) 45%,transparent 70%);
+}
+@keyframes wx-sheen{ 0%{transform:translateX(-120%)} 55%{transform:translateX(120%)} 100%{transform:translateX(120%)} }
+#weather-bar .wb-icon{ display:inline-block; animation:wx-float 4.5s ease-in-out infinite; }
+@keyframes wx-float{ 0%,100%{transform:translateY(0) rotate(0)} 50%{transform:translateY(-2px) rotate(-6deg)} }
+
+/* всичко след сцената е плаващ слой — нищо не стои в потока под картата */
+#karyk-sidebar{ display:none !important; }
+body > #zone-sidebar{ position:fixed !important; }
+#stage ~ *{ position:fixed !important; }
+#event-alert, #direction-hint, #nav-panel{ position:fixed !important; }
+
+/* вътрешният бутон „Списък" вече няма какво да прави */
+#toggle-map-btn, #toggle-map-btn-k{ display:none !important; }
+
+/* ═══ Колоната се закотвя ОТДОЛУ — така нищо не изпада под екрана,
+       независимо колко висока е шапката (в инсталираното приложение
+       заглавието се пренася на два реда).                            ═══ */
+#next90-btn, #clean-btn, #gps-btn, #fs-btn, .tool-btn{
+  top:auto !important;
+  width:44px !important; height:44px !important;
+  min-width:44px !important; max-width:44px !important;
+  font-size:20px !important; border-radius:14px !important;
+  overflow:hidden !important; white-space:nowrap !important;
+}
+#dest-__zones   { bottom:14px  !important; }
+#dest-cas_intl  { bottom:66px  !important; }
+#dest-cab_north { bottom:118px !important; }
+#dest-cjp       { bottom:170px !important; }
+#dest-airport   { bottom:222px !important; }
+#fs-btn         { bottom:288px !important; }
+#gps-btn        { bottom:340px !important; }
+#clean-btn      { bottom:392px !important; }
+#next90-btn     { bottom:444px !important; }
+
+/* чиповете долу вляво да не се качват върху колоната */
+#chip-stack{ max-width:56vw !important; }
+
+/* всичко се отваря на цял екран */
+#airport-modal-box{
+  margin-top:var(--stack-h,238px) !important;
+  max-height:calc(100dvh - var(--stack-h,238px)) !important;
+  height:calc(100dvh - var(--stack-h,238px)) !important;
+}
+.leaflet-popup{ display:none !important; }        /* попъпите отстъпват на цял екран */
+
+/* ═══ Прозорец на цял екран за гарите и автогарите ═══ */
+#zone-full{
+  display:none; position:fixed; inset:0; z-index:3000;
+  background:var(--scrim); backdrop-filter:blur(3px);
+  align-items:stretch; justify-content:center;
+}
+#zone-full-box{
+  width:100%; margin-top:var(--stack-h,238px);
+  height:calc(100dvh - var(--stack-h,238px));
+  display:flex; flex-direction:column;
+  background:var(--modal-bg); color:var(--text);
+  border:1px solid var(--modal-edge); border-radius:20px 20px 0 0;
+  box-shadow:var(--modal-shadow); backdrop-filter:var(--modal-blur);
+  overflow:hidden; animation:rise .3s var(--ease) both;
+}
+#zone-full-head{
+  flex-shrink:0; display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:13px 14px; border-bottom:1px solid var(--modal-edge);
+  font:800 15.5px -apple-system,system-ui,sans-serif; color:var(--cyan);
+  background:var(--modal-head); text-shadow:var(--glow);
+}
+#zone-full-x{
+  width:40px; height:40px; flex-shrink:0; border-radius:50%;
+  background:var(--surface); color:var(--text); border:1.5px solid var(--cyan);
+  font-size:20px; line-height:1; cursor:pointer;
+}
+#zone-full-body{ overflow-y:auto; overscroll-behavior:contain; padding:12px 14px 20px; }
+#zone-full-body *{ max-width:100%; }
+
+/* ═══════ СПИСЪКЪТ НА ЦЯЛ ЕКРАН — над лентите ═══════ */
+body.full-list #zone-sidebar{
+  top:0 !important; z-index:2600 !important;
+  border-radius:0 !important;
+  padding-top:6px !important;
+}
+body.full-list #zone-sidebar .zone-row,
+body.full-list #zone-sidebar .sidebar-title{ padding-right:62px !important; }
+/* коефициентът да не пада под бутоните */
+body.full-list #zone-sidebar .zone-row [class*="score"],
+body.full-list #zone-sidebar .zone-row > *:last-child{ margin-right:4px; }
+/* колоната остава отгоре и достъпна */
+.tool-btn, #next90-btn, #clean-btn, #gps-btn, #fs-btn{ z-index:2700 !important; }
+body.full-list .tool-btn, body.full-list #next90-btn, body.full-list #clean-btn,
+body.full-list #gps-btn, body.full-list #fs-btn{ opacity:.94; }
+
+/* ═══════ ЛЕТИЩЕТО — цял екран ═══════ */
+#airport-modal-box{
+  margin-top:0 !important; height:100dvh !important; max-height:100dvh !important;
+  border-radius:0 !important;
+}
+
+/* ═══════ Попъпите се връщат: компактни, колкото съдържанието ═══════ */
+.leaflet-popup{ display:block !important; }
+.leaflet-popup-content-wrapper{ max-height:52vh; overflow-y:auto; overscroll-behavior:contain; }
+.leaflet-popup-content{ margin:12px 14px !important; font-size:13.5px; }
+#zone-full{ display:none !important; }
+
+/* ═══════ НОЩ: повече неон и пулс по важното ═══════ */
+body.theme-night .dest-btn{
+  animation:neon-breathe 3.2s ease-in-out infinite;
+}
+@keyframes neon-breathe{
+  0%,100%{ box-shadow:0 6px 18px rgba(0,0,0,.55), 0 0 0 2px var(--dest-ring), 0 0 10px rgba(34,211,238,.20); }
+  50%    { box-shadow:0 6px 18px rgba(0,0,0,.55), 0 0 0 2px var(--dest-ring), 0 0 24px rgba(34,211,238,.55); }
+}
+body.theme-night .dest-btn.on{ animation:none; box-shadow:0 0 0 3px var(--cyan), 0 0 28px rgba(34,211,238,.75) !important; }
+body.theme-night #airport-badge.ready{ color:#34d399; text-shadow:0 0 12px rgba(52,211,153,.6); }
+body.theme-night .zone-row [class*="peak"], body.theme-night .tl-dead{
+  animation:neon-pulse 1.8s ease-in-out infinite;
+}
+@keyframes neon-pulse{ 0%,100%{ filter:none } 50%{ filter:drop-shadow(0 0 8px currentColor) } }
+body.theme-night .header h1{ animation:title-glow 5s ease-in-out infinite; }
+@keyframes title-glow{
+  0%,100%{ filter:drop-shadow(0 0 8px rgba(34,211,238,.30)) }
+  50%    { filter:drop-shadow(0 0 16px rgba(167,139,250,.55)) }
+}
+#airport-badge.ready{ color:var(--green); font-weight:800; }
+
+/* ═══ Навигационният панел долу (посока/скор) — по темата ═══ */
+#nav-panel, #direction-hint, #event-alert{
+  background:var(--glass) !important; color:var(--text) !important;
+  border:1px solid var(--glass-edge) !important;
+  backdrop-filter:saturate(175%) blur(15px);
+  -webkit-backdrop-filter:saturate(175%) blur(15px);
+  box-shadow:var(--card) !important;
+  border-radius:16px !important;
+}
+#nav-panel *, #direction-hint *, #event-alert *{ color:var(--text) !important; }
+#nav-panel [style*="color:#f8"], #nav-panel [style*="color:#e"]{ color:var(--red) !important; }
+/* стрелката за посока */
+#nav-arrow, .nav-arrow{ background:var(--glass) !important; border:1px solid var(--glass-edge) !important; }
+
+/* попъпът никога под лентите */
+.leaflet-popup{ margin-bottom:8px; }
+.leaflet-popup-content-wrapper{ max-height:46vh; }
+
+/* панелът за посока — стъклен и по темата (беше зашит #070d1af8) */
+#direction-hint{
+  background:var(--glass) !important;
+  border-top:2px solid var(--amber) !important;
+  color:var(--text) !important;
+  backdrop-filter:saturate(175%) blur(16px);
+  -webkit-backdrop-filter:saturate(175%) blur(16px);
+  box-shadow:0 -6px 22px rgba(15,27,45,.16) !important;
+}
+#direction-hint .dh-name{ color:var(--text) !important; }
+#direction-hint .dh-addr{ color:var(--muted) !important; }
+#direction-hint .dh-close{ color:var(--muted) !important; }
+body.theme-night #direction-hint{ box-shadow:0 -6px 24px rgba(0,0,0,.6) !important; }
+
+/* нощната карта: филтърът се прилага без изключения */
+body.tiles-dark .leaflet-tile-pane{
+  filter:invert(1) hue-rotate(180deg) brightness(.93) contrast(.92) saturate(.75) !important;
+}
+
+/* ═══ Когато нещо е отворено: колоната избледнява, активният остава видим ═══
+   Така панелът се прибира с една ръка — палецът натиска същия бутон,
+   вместо да търсиш Х-а горе.                                              */
+#next90-btn, #clean-btn, #gps-btn, #fs-btn, .tool-btn{
+  transition:opacity .25s var(--ease), transform .16s var(--ease), box-shadow .2s var(--ease);
+}
+body.full-list #next90-btn, body.full-list #clean-btn,
+body.full-list #gps-btn,    body.full-list #fs-btn,
+body.full-list .tool-btn,
+body[data-full] #next90-btn, body[data-full] #clean-btn,
+body[data-full] #gps-btn,    body[data-full] #fs-btn,
+body[data-full] .tool-btn{
+  opacity:.10 !important;
+}
+/* активният — на половин прозрачност и с ясен пръстен */
+body.full-list .dest-btn.on,
+body[data-full] .dest-btn.on{
+  opacity:.55 !important;
+  box-shadow:0 0 0 3px var(--cyan), 0 6px 20px rgba(15,27,45,.30) !important;
+}
+/* при докосване се показва напълно, за да си сигурен къде натискаш */
+body.full-list .tool-btn:active, body[data-full] .tool-btn:active,
+body.full-list #gps-btn:active,  body[data-full] #gps-btn:active,
+body.full-list #fs-btn:active,   body[data-full] #fs-btn:active,
+body.full-list #clean-btn:active,body[data-full] #clean-btn:active,
+body.full-list #next90-btn:active,body[data-full] #next90-btn:active{
+  opacity:1 !important;
+}
+
+/* ═══ Колоната стои НАД всички панели, за да се затварят с една ръка ═══
+   Летищният прозорец е на слой 3000 и покриваше бутоните.            */
+#next90-btn, #clean-btn, #gps-btn, #fs-btn, .tool-btn{ z-index:3600 !important; }
+/* панелите оставят десния ръб свободен, за да не гълтат докосването */
+
+/* панелите стигат до ръба; бутоните просто плуват отгоре полупрозрачни */
+#airport-modal-box{ padding-right:0 !important; }
+#airport-modal-body{ padding-right:12px !important; }
+/* последната колона с часове да не влиза под бутоните */
+#airport-modal-body .fl-row:last-child{ padding-right:2px; }
+</style>
+<style>
+
+/* System fonts - no external dependency */
+/* ═══════ ДВЕ ТЕМИ ═══════
+   ДЕН  — класическа, светла, спокойна
+   НОЩ  — неон, сияния, пулсации
+   Логиката е обща; сменят се само цветовете и ефектите.        */
+:root {
+  --bg:#eef2f8; --surface:#ffffff; --border:#cbd5e6;
+  --amber:#d97706; --cyan:#0369a1; --green:#16a34a;
+  --red:#dc2626; --orange:#ea580c; --muted:#55657c; --text:#0f1b2d;
+  --surf:#ffffff;
+  --glow:none;
+  --glow-soft:none;
+  --card:0 1px 2px rgba(15,27,45,.08), 0 8px 22px rgba(15,27,45,.07);
+  --ring:rgba(3,105,161,.22);
+  --sheen:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.55));
+  --ease:cubic-bezier(.22,1,.36,1);
+  /* стъклен, iOS-подобен прозорец денем */
+  --modal-bg:rgba(255,255,255,.86);
+  --modal-head:linear-gradient(180deg,rgba(255,255,255,.95),rgba(246,249,253,.86));
+  --modal-edge:rgba(15,27,45,.14);
+  --modal-shadow:0 18px 50px rgba(15,27,45,.22), 0 2px 8px rgba(15,27,45,.10);
+  --modal-blur:saturate(180%) blur(20px);
+  --bar-bg:rgba(255,255,255,.70);
+  --bar-fg:#0f1b2d;
+  --glass:rgba(255,255,255,.62);
+  --glass-edge:rgba(15,27,45,.10);
+  --title:linear-gradient(100deg,#0369a1,#0891b2 45%,#6366f1);
+  --scrim:rgba(240,245,252,.55);
+  --bronze:#b06a1f; --bronze-soft:rgba(176,106,31,.28); --bronze-hot:rgba(217,140,60,.55);
+  --gold:#8a6d12; --gold-edge:rgba(138,109,18,.28);
+  --dest-bg:linear-gradient(160deg,#ffffff,#eaf2fb 70%,#dceaf8);
+  --dest-ring:rgba(3,105,161,.55);
+}
+body.theme-night {
+  --bg:#060b14; --surface:#0e1726; --border:#22334c;
+  --amber:#fbbf24; --cyan:#22d3ee; --green:#34d399;
+  --red:#f87171; --orange:#fb923c; --muted:#8ea6c2; --text:#e9eff8;
+  --surf:#0e1726;
+  --glow:0 0 10px currentColor;
+  --glow-soft:0 0 22px rgba(34,211,238,.18);
+  --card:0 2px 8px rgba(0,0,0,.55), 0 0 24px rgba(34,211,238,.09);
+  --ring:rgba(34,211,238,.38);
+  --sheen:linear-gradient(180deg,rgba(34,211,238,.10),rgba(14,23,38,.65));
+  --modal-bg:#0d1524;
+  --modal-head:linear-gradient(180deg,#122036,#0d1524);
+  --modal-edge:rgba(34,211,238,.35);
+  --modal-shadow:0 10px 44px rgba(0,0,0,.75), 0 0 26px rgba(34,211,238,.22);
+  --modal-blur:none;
+  --bar-bg:rgba(6,16,28,.72);
+  --bar-fg:#e8eef7;
+  --glass:rgba(12,22,38,.58);
+  --glass-edge:rgba(34,211,238,.20);
+  --title:linear-gradient(100deg,#22d3ee,#67e8f9 40%,#a78bfa);
+  --scrim:rgba(3,7,18,.55);
+  --bronze:#e8a050; --bronze-soft:rgba(205,127,50,.35); --bronze-hot:rgba(255,175,90,.75);
+  --gold:#d4af37; --gold-edge:rgba(212,175,55,.35);
+  --dest-bg:linear-gradient(160deg,#1b3050,#132540 70%,#0e1b30);
+  --dest-ring:rgba(34,211,238,.60);
+}
+
+/* плавна смяна на темата */
+body, .zone-row, .hist-table, #airport-modal-box,
+.leaflet-popup-content-wrapper, .ticker-bar{
+  transition:background-color .35s var(--ease), color .35s var(--ease),
+             border-color .35s var(--ease), box-shadow .35s var(--ease);
+}
+
+/* ── 2026: живи повърхности ── */
+.zone-row{ box-shadow:var(--card); }
+.zone-row:active{ transform:scale(.985); }
+body.theme-night .sidebar-title,
+body.theme-night .tl-hint,
+body.theme-night #karyk-badge{ text-shadow:var(--glow); }
+
+/* неонов ръб само нощем */
+body.theme-night .hist-table-wrap,
+body.theme-night #bakshish-panel,
+body.theme-night #next90-panel{
+  box-shadow:var(--card), inset 0 0 0 1px rgba(34,211,238,.07);
+}
+
+/* ── FAB: 3D разгъване ── */
+#fab-wrap{ perspective:900px; }
+#fab-wrap .fab-sat{
+  animation:none;
+  filter:blur(6px);
+  transition:left .34s var(--ease), top .34s var(--ease),
+             opacity .22s linear, filter .3s var(--ease);
+}
+#fab-hub{ transform-style:preserve-3d; }
+body.theme-night #fab-hub{ box-shadow:0 4px 18px rgba(0,0,0,.7), 0 0 22px var(--ring); }
+
+/* ── превключвател на темата ── */
+#theme-btn{
+  position:fixed; top:9px; right:64px; z-index:2600;
+  width:30px; height:30px; border-radius:50%; cursor:pointer;
+  border:1.5px solid var(--border); background:var(--surface); color:var(--text);
+  font-size:14px; line-height:1; box-shadow:var(--card);
+  transition:transform .3s var(--ease), box-shadow .3s var(--ease);
+}
+#theme-btn:active{ transform:scale(.9) rotate(-25deg); }
+body.theme-night #theme-btn{ border-color:var(--cyan); box-shadow:0 0 16px var(--ring); }
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{font-size:16px;min-height:100%;margin:0;padding:0;}
+body{font-size:16px;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;}
+
+/* HEADER */
+.header{display:flex;align-items:center;gap:8px;padding:10px 12px;
+  background:var(--glass); border-bottom:1px solid var(--glass-edge);
+  backdrop-filter:saturate(170%) blur(16px); -webkit-backdrop-filter:saturate(170%) blur(16px);
+  flex-shrink:0; z-index:1000;}
+.header h1{
+  font:800 17px/1.15 -apple-system,'Segoe UI',system-ui,sans-serif;
+  letter-spacing:.5px;
+  background:var(--title); -webkit-background-clip:text; background-clip:text;
+  color:transparent; -webkit-text-fill-color:transparent;
+}
+body.theme-night .header h1{ filter:drop-shadow(0 0 10px rgba(34,211,238,.35)); }
+.header p{ font-size:12.5px !important; letter-spacing:.6px !important; opacity:.85; }
+.header p{font-size:16px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:1px;}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:6px;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.4s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+#airport-badge{font-family:'Courier New',Courier,monospace;font-size:16px;color:var(--amber);}
+
+/* TIMELINE */
+.timeline-panel{background:var(--surface);border-bottom:1px solid var(--border);padding:7px 12px 5px;flex-shrink:0;}
+.tl-top{display:flex;align-items:baseline;gap:8px;margin-bottom:4px;}
+.tl-clock{font-family:'Courier New',Courier,monospace;font-size:20px;color:var(--cyan);}
+.tl-sub{font-size:16px;color:var(--muted);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tl-dead{font-size:16px;color:var(--red);font-family:'Courier New',Courier,monospace;display:none;}
+#demand-canvas{width:100%;height:40px;display:block;cursor:pointer;min-height:40px;}
+.tl-slider-wrap{margin-top:-4px;}
+input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:4px;background:transparent;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--cyan);border:2px solid var(--bg);box-shadow:0 0 6px rgba(0,229,255,.7);cursor:pointer;}
+.tl-ticks{display:flex;justify-content:space-between;font-size:16px;color:var(--muted);font-family:'Courier New',Courier,monospace;margin-top:1px;}
+
+/* TICKER */
+.ticker-bar{background:var(--glass);backdrop-filter:saturate(160%) blur(12px);-webkit-backdrop-filter:saturate(160%) blur(12px);border-bottom:1px solid var(--border);padding:0 12px;height:30px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;}
+.ticker-wrap{display:flex;gap:50px;animation:ticker 28s linear infinite;width:max-content;white-space:nowrap;}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.tick-item{font-family:'Courier New',Courier,monospace;font-size:16px;color:var(--bar-fg);font-weight:700;}
+body.theme-night .tick-item{text-shadow:0 0 8px rgba(34,211,238,.35);}
+.tick-item .ev-time{color:var(--amber);}
+.tick-item .ev-loc{color:#9fb3c8;}
+
+/* MAP — фиксирана височина вместо flex:1 за да се рендира правилно */
+#map{ height:100vh !important; min-height:420px !important;
+  height:100vh;
+  min-height: 220px;
+  z-index:1;
+  background:#08111f;
+}
+
+/* NAV PANEL (bottom sheet) */
+#nav-panel{
+  position:fixed;bottom:0;left:0;right:0;
+  background:#0a172af5;border-top:1px solid var(--border);
+  padding:10px 14px;z-index:2000;
+  display:none;flex-direction:column;gap:6px;
+  backdrop-filter:blur(6px);
+}
+#nav-panel.open{display:flex;}
+.nav-title{font-family:'Courier New',Courier,monospace;font-size:15px;color:var(--cyan);}
+.nav-target{font-size:15px;font-weight:600;}
+.nav-distance{font-family:'Courier New',Courier,monospace;font-size:15px;color:var(--muted);}
+.nav-row{display:flex;gap:8px;align-items:center;}
+#nav-compass{font-size:28px;transition:transform .4s;}
+.nav-hint{font-size:15px;color:var(--text);}
+.nav-close{margin-left:auto;font-size:18px;cursor:pointer;color:var(--muted);padding:0 4px;}
+.nav-score{font-family:'Courier New',Courier,monospace;font-size:16px;font-weight:bold;}
+
+/* GPS button */
+#gps-btn{
+  position:fixed;right:12px;bottom:120px;z-index:1500;
+  width:44px;height:44px;border-radius:50%;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--cyan);font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 12px rgba(0,0,0,.5);
+}
+#gps-btn.active{background:#0d2a1a;border-color:var(--green);color:var(--green);}
+
+/* Fullscreen button */
+#fs-btn{
+  position:fixed;right:12px;bottom:70px;z-index:1500;
+  width:44px;height:44px;border-radius:50%;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 12px rgba(0,0,0,.5);
+}
+#fs-btn.active{background:#0d1f38;border-color:var(--cyan);color:var(--cyan);}
+
+/* Fullscreen map mode */
+body.map-fullscreen .header,
+body.map-fullscreen .timeline-panel,
+body.map-fullscreen .ticker-bar { display:none !important; }
+body.map-fullscreen #map { height:100vh !important; height:100dvh !important; }
+body.map-fullscreen #legend { bottom:70px; }
+body.map-fullscreen #gps-btn { bottom:120px; }
+body.map-fullscreen #fs-btn  { bottom:70px; }
+
+/* Pulsing user location dot */
+@keyframes pulse-ring {
+  0%   { transform:scale(1);   opacity:.7; }
+  70%  { transform:scale(3.0); opacity:0;  }
+  100% { transform:scale(3.0); opacity:0;  }
+}
+.user-dot-pulse {
+  width:14px; height:14px; border-radius:50%;
+  background:#00e5ff;
+  animation:pulse-ring 3s ease-out infinite;
+}
+
+/* Traffic jam zones — pulsing purple */
+@keyframes jam-blink {
+  0%,100%{ opacity:1; transform:scale(1); }
+  50%    { opacity:0.5; transform:scale(1.3); }
+}
+@keyframes jam-pulse {
+  0%,100% { opacity:0.7; }
+  50%      { opacity:1.0; }
+}
+.leaflet-interactive[data-jam="1"] {
+  animation: jam-pulse 1.5s ease-in-out infinite;
+}
+
+/* ── КАРЪК MODE ── */
+#karyk-btn {
+  position:fixed; left:8px; bottom:180px;
+  z-index:1500; writing-mode:vertical-rl; text-orientation:mixed;
+  background:#1a100a; border:2px solid #7c4a1a;
+  color:#cd7f32; font-family:'Courier New',Courier,monospace;
+  font-size:15px; letter-spacing:2px;
+  padding:10px 5px; border-radius:6px; cursor:pointer;
+  transition:all .3s; white-space:nowrap;
+  box-shadow:0 0 6px #7c4a1a44;
+}
+#karyk-btn:hover { border-color:#cd7f32; color:#e8a050; }
+#karyk-btn.active {
+  background:#2a1a08; border-color:#cd7f32;
+  color:#ffa040; box-shadow:0 0 14px #cd7f3266;
+}
+#karyk-banner {
+  display:none; position:fixed; top:0; left:0; right:0; z-index:3000;
+  background:#1a0e04f5; border-bottom:2px solid #cd7f32;
+  padding:8px 14px; font-family:'Courier New',Courier,monospace;
+  font-size:15px; color:#cd7f32; backdrop-filter:blur(6px);
+}
+#karyk-banner .kb-title { font-size:15px; color:#ffa040; margin-bottom:2px; }
+#karyk-banner .kb-hint  { font-size:15px; color:#9a6020; }
+
+/* ── DIRECTION ARROW overlay ── */
+#direction-hint {
+  display:none;
+  position:fixed; bottom:0; left:0; right:0;
+  background:#070d1af8;
+  border-top:2px solid var(--amber);
+  padding:10px 14px;
+  z-index:1800;
+  font-family:'Courier New',Courier,monospace;
+}
+#direction-hint .dh-row { display:flex; align-items:center; gap:12px; }
+#direction-hint .dh-arrow { font-size:44px; transition:transform .4s; flex-shrink:0; line-height:1; }
+#direction-hint .dh-info  { flex:1; }
+#direction-hint .dh-name  { font-size:15px; color:var(--amber); font-weight:600; }
+#direction-hint .dh-addr  { font-size:15px; color:var(--muted); margin-top:2px; }
+#direction-hint .dh-dist  { font-size:15px; color:var(--cyan); margin-top:3px; }
+#direction-hint .dh-score { font-size:26px; font-weight:bold; font-family:'Courier New',Courier,monospace; }
+#direction-hint .dh-close { cursor:pointer; color:var(--muted); font-size:16px; padding:4px; }
+
+/* ── SIDEBAR zone list ── */
+#zone-sidebar {
+  background:var(--surface);
+  border-top:2px solid var(--border);
+  max-height:35vh;
+  min-height:80px;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  display:block !important;
+}
+.sidebar-title {
+  font-family:'Courier New',Courier,monospace;
+  font-size:15px; letter-spacing:1px; color:var(--muted);
+  padding:8px 12px 4px; text-transform:uppercase;
+  position:sticky; top:0; background:var(--surface); z-index:1;
+}
+.zone-item {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 12px; border-bottom:1px solid var(--border);
+  cursor:pointer; transition:background .12s;
+  font-size:14px;
+}
+.zone-item:hover  { background:rgba(0,0,0,.05); }
+.zone-item.active { background:rgba(2,132,199,.08); border-left:3px solid var(--cyan); }
+.zone-dot   { width:9px; height:9px; border-radius:2px; flex-shrink:0; }
+.zone-name  { font-size:15px; flex:1; line-height:1.4; }
+.zone-sub   { font-size:15px; color:var(--muted); }
+.zone-score { font-family:'Courier New',Courier,monospace; font-size:15px; font-weight:bold; }
+
+/* ── БАКШИШ ПАНЕЛ ── */
+#bakshish-btn {
+  position:fixed; right:12px; bottom:290px; z-index:1500;
+  width:44px; height:44px; border-radius:50%;
+  background:#1a1200; border:2px solid #d4af37;
+  color:#d4af37; font-size:20px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 0 10px #d4af3744;
+  transition:all .3s;
+}
+#bakshish-btn.active { background:#2a2000; border-color:#ffd700; box-shadow:0 0 16px #ffd70066; }
+body.map-fullscreen #bakshish-btn { display:none; }
+
+#bakshish-panel {
+  display:none;
+  position:fixed; left:8px; right:8px; bottom:12px; top:auto; z-index:2600;
+  background:var(--glass);
+  border:1px solid var(--gold-edge);
+  border-radius:18px;
+  max-height:58vh; overflow-y:auto; overscroll-behavior:contain;
+  backdrop-filter:saturate(180%) blur(18px);
+  -webkit-backdrop-filter:saturate(180%) blur(18px);
+  box-shadow:var(--modal-shadow);
+}
+#bakshish-panel .bp-header {
+  position:sticky; top:0; background:var(--glass); z-index:5;
+  backdrop-filter:saturate(180%) blur(18px);
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px;
+  font-family:'Courier New',Courier,monospace;
+  font-size:15px; color:var(--gold);
+  border-bottom:1px solid var(--gold-edge);
+  position:sticky; top:0; background:#0d0e00f8; z-index:1;
+}
+#bakshish-panel .bp-shift {
+  font-size:15px; color:#a08000; margin-left:auto;
+  font-family:'Courier New',Courier,monospace;
+}
+#bakshish-panel .bp-close {
+  cursor:pointer; color:#6a5000; font-size:18px; padding:0 4px; margin-left:8px;
+}
+#bakshish-panel .bp-shift-banner {
+  padding:8px 14px;
+  background:#1a1500;
+  border-bottom:1px solid #3a3000;
+  font-family:'Courier New',Courier,monospace;
+  font-size:15px;
+}
+#bakshish-panel .bp-shift-name { font-size:16px; color:#ffd700; margin-bottom:3px; }
+#bakshish-panel .bp-shift-tip  { font-size:15px; color:#8a7000; line-height:1.5; }
+.bp-item {
+  display:flex; align-items:center; gap:10px;
+  padding:9px 14px; border-bottom:1px solid #1a1500;
+  cursor:pointer; transition:background .12s;
+}
+.bp-item:hover { background:#1a1500; }
+.bp-rank { font-family:'Courier New',Courier,monospace; font-size:15px; color:#6a5000; min-width:24px; }
+.bp-dot  { width:11px; height:11px; border-radius:50%; flex-shrink:0; }
+.bp-info { flex:1; min-width:0; }
+.bp-name { font-size:15px; color:#e8d080; }
+.bp-why  { font-size:15px; color:#8a7000; margin-top:2px; line-height:1.4; }
+.bp-score-wrap { text-align:right; }
+.bp-score { font-family:'Courier New',Courier,monospace; font-size:15px; font-weight:bold; color:#d4af37; }
+.bp-multiplier { font-size:16px; color:#6a5000; } */
+#karyk-sidebar {
+  display:none;
+  background:#100808;
+  border-top:2px solid #cd7f32;
+  max-height:40vh;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+#karyk-sidebar .sidebar-title {
+  background:var(--surface);
+  color:var(--amber);
+  border-bottom:1px solid var(--border);
+}
+.karyk-item {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 12px; border-bottom:1px solid #1a0a00;
+  cursor:pointer; transition:background .12s;
+}
+.karyk-item:hover { background:#1a0e04; }
+.karyk-dot {
+  width:11px; height:11px; border-radius:50%;
+  background:#cd7f32; border:1px solid #ffa040;
+  flex-shrink:0;
+}
+.karyk-rank {
+  font-family:'Courier New',Courier,monospace;
+  font-size:15px; color:#7c4a1a; min-width:20px;
+}
+.karyk-name { font-size:15px; flex:1; color:#e8c090; }
+.karyk-sub  { font-size:15px; color:#7c4a1a; }
+.karyk-score {
+  font-family:'Courier New',Courier,monospace;
+  font-size:16px; font-weight:bold; color:#cd7f32;
+}
+
+/* When karyk active — hide normal sidebar, show karyk sidebar */
+body.karyk-active #zone-sidebar  { display:none; }
+body.karyk-active #karyk-sidebar { display:block; }
+
+/* fullscreen hides sidebar */
+body.map-fullscreen #zone-sidebar { display:none; }
+
+/* Legend */
+#legend.expanded #legend.expanded 
+/* Leaflet popup override */
+.leaflet-popup-content-wrapper{
+  background:var(--modal-bg); border:1px solid var(--modal-edge); border-radius:16px;
+  color:var(--text); box-shadow:var(--modal-shadow); backdrop-filter:var(--modal-blur);
+}
+.leaflet-popup-tip{ background:var(--modal-bg) !important; box-shadow:none !important; }
+.leaflet-popup-close-button{ color:var(--muted) !important; }
+.leaflet-popup-tip{background:#0d1929;}
+.leaflet-popup-content{margin:10px 12px;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:16px;min-width:160px;}
+.popup-title{font-family:'Courier New',Courier,monospace;font-size:15px;color:var(--cyan);margin-bottom:5px;}
+.popup-score{font-size:20px;font-weight:bold;margin-bottom:3px;}
+.popup-ev{font-size:15px;color:var(--muted);line-height:1.5;margin-bottom:6px;}
+.popup-nav-btn{background:var(--cyan);color:#000;border:none;border-radius:4px;padding:5px 10px;font-size:15px;font-weight:600;cursor:pointer;width:100%;font-family:'Courier New',Courier,monospace;}
+.popup-nav-btn:hover{background:#00c8e0;}
+
+/* Weather banner */
+#weather-bar {
+  background:var(--glass);
+  border-bottom:1px solid var(--glass-edge);
+  backdrop-filter:saturate(170%) blur(14px);
+  -webkit-backdrop-filter:saturate(170%) blur(14px);
+  padding:7px 14px;
+  font-family:'Courier New',Courier,monospace;
+  font-size:15px;
+  color:var(--text);
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-shrink:0;
+}
+#weather-bar .wb-icon { font-size:18px; }
+#weather-bar .wb-temp { color:var(--cyan); }
+#weather-bar .wb-desc { color:var(--muted); flex:1; }
+#weather-bar .wb-boost{ color:#f59e0b; font-size:15px; }
+body.map-fullscreen #weather-bar { display:none !important; }
+
+/* Next 90 min panel */
+#next90-panel {
+  display:none;
+  position:fixed;
+  top:0; left:0; right:0;
+  z-index:2500;
+  background:#070d1af8;
+  border-bottom:2px solid var(--cyan);
+  max-height:60vh;
+  overflow-y:auto;
+  backdrop-filter:blur(8px);
+}
+#next90-panel .n90-header {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px;
+  font-family:'Courier New',Courier,monospace;
+  font-size:16px; color:var(--cyan);
+  border-bottom:1px solid var(--border);
+  position:sticky; top:0; background:#070d1af8; z-index:1;
+}
+#next90-panel .n90-close {
+  margin-left:auto; cursor:pointer;
+  color:var(--muted); font-size:16px; padding:0 4px;
+}
+.n90-item {
+  display:flex; align-items:center; gap:10px;
+  padding:8px 14px; border-bottom:1px solid #0e1d30;
+}
+.n90-time {
+  font-family:'Courier New',Courier,monospace;
+  font-size:15px; color:var(--amber); min-width:48px;
+}
+.n90-icon { font-size:16px; }
+.n90-info { flex:1; }
+.n90-name { font-size:16px; color:var(--text); }
+.n90-zone { font-size:15px; color:var(--muted); }
+.n90-score{
+  font-family:'Courier New',Courier,monospace;
+  font-size:15px; font-weight:bold;
+}
+
+/* Next 90 button */
+#next90-btn {
+  position:fixed; right:12px; bottom:230px; z-index:1500;
+  width:44px; height:44px; border-radius:50%;
+  background:var(--surface); border:1px solid var(--border);
+  color:var(--amber); font-size:18px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 12px rgba(0,0,0,.5);
+}
+#next90-btn.active { background:#1a1400; border-color:var(--amber); }
+body.map-fullscreen #next90-btn { display:none; }
+
+/* Event alert */
+@keyframes alert-pulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:0.85; transform:scale(1.02); }
+}
+#event-alert {
+  display:none;
+  position:fixed; bottom:0; left:0; right:0;
+  z-index:2800;
+  background:#1a0800f5;
+  border-top:2px solid var(--orange);
+  padding:10px 14px;
+  font-family:'Courier New',Courier,monospace;
+  animation:alert-pulse 2s ease-in-out infinite;
+}
+#event-alert .ea-row { display:flex; align-items:center; gap:10px; }
+#event-alert .ea-icon { font-size:28px; }
+#event-alert .ea-info { flex:1; }
+#event-alert .ea-title{ font-size:15px; color:var(--orange); font-weight:bold; }
+#event-alert .ea-sub  { font-size:15px; color:var(--muted); margin-top:2px; }
+#event-alert .ea-dist { font-size:15px; color:var(--cyan); }
+#event-alert .ea-close{ cursor:pointer; color:var(--muted); font-size:18px; padding:4px; }
+#event-alert .ea-waze {
+  background:var(--orange); color:#000;
+  border:none; border-radius:4px;
+  padding:5px 10px; font-size:15px;
+  font-family:'Courier New',Courier,monospace;
+  cursor:pointer;
+}
+
+
+/* MOBILE FIX */
+@media (max-width:768px) {
+  #map { height:100dvh !important; min-height:420px !important; }
+  #zone-sidebar { max-height:30vh; min-height:60px; display:block !important; }
+  body.karyk-active #zone-sidebar { display:none !important; }
+  body.karyk-active #karyk-sidebar { display:block !important; max-height:30vh; overflow-y:auto; }
+  .sidebar-title { font-size:13px; padding:6px 12px; }
+}
+</style>
+</head>
+<body>
+<div id="stage">
+<div id="topstack">
+<div class="header">
+  <div>
+    <h1>📍 TAXI SOFIA · ТЕСТ</h1>
+    <p>Тестова версия · обратна връзка се приема</p>
+  </div>
+  <div class="hdr-right">
+    <span id="airport-badge">✈ ЗАРЕЖДА…</span>
+    <div class="live-dot"></div>
+  </div>
+</div>
+
+<!-- Weather Bar -->
+<div id="weather-bar">
+  <span class="wb-icon" id="wb-icon">🌤</span>
+  <span class="wb-temp" id="wb-temp">—°C</span>
+  <span class="wb-desc" id="wb-desc">Зарежда времето…</span>
+  <span class="wb-boost" id="wb-boost"></span>
+</div>
+
+<div class="timeline-panel">
+  <div class="tl-top">
+    <span class="tl-clock" id="time-display">16:00</span>
+    <span class="tl-sub"   id="tl-hint">—</span>
+    <span class="tl-dead"  id="tl-dead">⚠ МЪРТВА ЗОНА</span>
+  </div>
+  <canvas id="demand-canvas"></canvas>
+  <div class="tl-slider-wrap">
+    <input type="range" id="time-slider" min="0" max="24" value="16" step="0.5">
+  </div>
+  <div class="tl-ticks">
+    <span>0</span><span>3</span><span>6</span><span>9</span><span>12</span>
+    <span>15</span><span>18</span><span>21</span><span>24</span>
+  </div>
+</div>
+
+<div class="ticker-bar"><div class="ticker-wrap" id="ticker"></div></div>
+</div><!-- /topstack -->
+
+<div id="map"></div>
+</div><!-- /stage -->
+
+<!-- Zone sidebar list -->
+<div id="zone-sidebar">
+  <div class="sidebar-title" style="display:flex;justify-content:space-between;align-items:center">
+    <span>▣ Зони по приоритет</span>
+    <button id="toggle-map-btn" onclick="toggleMapView()"
+      style="background:var(--cyan);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0">
+      📋 Списък
+    </button>
+  </div>
+  <div id="zone-list"></div>
+</div>
+
+<!-- КАРЪК sidebar -->
+<div id="karyk-sidebar">
+  <div class="sidebar-title" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+    <span>🥉 КАРЪК ЗОНИ — само за бронзови</span>
+    <button id="toggle-map-btn-k" onclick="toggleMapView()"
+      style="background:#cd7f32;color:#1a100a;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0">
+      📋 Списък
+    </button>
+  </div>
+  <div id="karyk-list"></div>
+</div>
+
+<!-- Event Alert -->
+<div id="event-alert">
+  <div class="ea-row">
+    <div class="ea-icon" id="ea-icon">🎸</div>
+    <div class="ea-info">
+      <div class="ea-title" id="ea-title">—</div>
+      <div class="ea-sub"   id="ea-sub">—</div>
+      <div class="ea-dist"  id="ea-dist"></div>
+    </div>
+    <button class="ea-waze" id="ea-waze">🚗 Waze</button>
+    <span class="ea-close" onclick="closeEventAlert()">✕</span>
+  </div>
+</div>
+
+<!-- Direction hint (auto arrow to nearest worthy zone) -->
+<div id="direction-hint">
+  <div class="dh-row">
+    <div class="dh-arrow" id="dh-arrow">➡️</div>
+    <div class="dh-info">
+      <div class="dh-name"  id="dh-name">—</div>
+      <div class="dh-addr"  id="dh-addr">—</div>
+      <div class="dh-dist"  id="dh-dist">—</div>
+    </div>
+    <div class="dh-score" id="dh-score">—</div>
+    <span class="dh-close" onclick="closeDirHint()">✕</span>
+  </div>
+</div>
+<button id="next90-btn" title="Събития в следващите 24 часа">⏱</button>
+<button id="gps-btn" title="GPS локация">📍</button>
+<button id="bakshish-btn" title="Бакшиш радар">🎩</button>
+
+<!-- Next 90 min panel -->
+<!-- БАКШИШ ПАНЕЛ -->
+<div id="bakshish-panel">
+  <div class="bp-header">
+    🎩 БАКШИШ РАДАР
+    <span class="bp-shift" id="bp-shift-label">—</span>
+    <span class="bp-close" onclick="closeBakshish()">✕</span>
+  </div>
+  <div class="bp-shift-banner">
+    <div class="bp-shift-name" id="bp-shift-name">—</div>
+    <div class="bp-shift-tip"  id="bp-shift-tip">—</div>
+  </div>
+  <div id="bakshish-list"></div>
+</div>
+
+<div id="next90-panel">
+  <div class="n90-header">
+    ⏱ СЪБИТИЯ — СЛЕДВАЩИТЕ 24 ЧАСА
+    <span class="n90-close" onclick="closeNext90()">✕</span>
+  </div>
+  <div id="next90-list"></div>
+</div>
+<button id="karyk-btn" title="Карък Mode — бронзов партньор, тихи зони">🥉<br>К<br>А<br>Р<br>Ъ<br>К</button>
+<div id="karyk-banner">
+  <div class="kb-title">🥉 КАРЪК MODE — Бронзов партньор, умни ходове</div>
+  <div class="kb-hint" id="karyk-hint">Анализирам тихи зони…</div>
+</div>
+<button id="fs-btn"  title="Fullscreen карта">⛶</button>
+
+</div>
+
+<!-- Navigation bottom sheet -->
+<div id="nav-panel">
+  <div class="nav-row">
+    <div>
+      <div class="nav-title">🧭 НАВИГАЦИЯ КЪМ</div>
+      <div class="nav-target" id="nav-target">—</div>
+      <div class="nav-distance" id="nav-dist">—</div>
+    </div>
+    <div class="nav-score" id="nav-score" style="margin-left:12px">—</div>
+    <span class="nav-close" onclick="closeNav()">✕</span>
+  </div>
+  <div class="nav-row">
+    <div id="nav-compass" style="font-size:32px">⬆️</div>
+    <div class="nav-hint" id="nav-hint">Изчакване на GPS…</div>
+  </div>
+</div>
+<script src="leaflet.min.js"></script>
+<script src="app.js?v=taxisofia-1"></script>
+
+<!-- PWA Install Banner -->
+<div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:999;background:#0284c7;padding:10px 14px;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 -3px 15px #0003">
+  <div style="display:flex;align-items:center;gap:10px">
+    <span style="font-size:24px">🚕</span>
+    <div>
+      <div style="font-size:13px;font-weight:900;color:#fff">Инсталирай BakshishApp</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.8)">Работи офлайн · Бърз достъп</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:7px">
+    <button onclick="document.getElementById('pwa-banner').style.display='none';localStorage.setItem('pwa-bak-no','1')" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:7px;padding:6px 11px;font-size:12px;color:#fff;cursor:pointer">Не сега</button>
+    <button id="pwa-bak-btn" style="background:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:13px;font-weight:900;color:#0284c7;cursor:pointer">Инсталирай ↓</button>
+  </div>
+</div>
+<script>
+(function(){
+  if(window.matchMedia('(display-mode:standalone)').matches||localStorage.getItem('pwa-bak-no')) return;
+  let dp=null;
+  window.addEventListener('beforeinstallprompt',function(e){
+    e.preventDefault();dp=e;
+    setTimeout(function(){document.getElementById('pwa-banner').style.display='flex';},2500);
+  });
+  document.getElementById('pwa-bak-btn').addEventListener('click',function(){
+    if(!dp)return;dp.prompt();
+    dp.userChoice.then(function(r){if(r.outcome==='accepted')document.getElementById('pwa-banner').style.display='none';});
+  });
+  const iOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  if(iOS&&!window.navigator.standalone){
+    setTimeout(function(){
+      document.getElementById('pwa-banner').style.display='flex';
+      document.getElementById('pwa-bak-btn').textContent='Как?';
+      document.getElementById('pwa-bak-btn').onclick=function(){
+        alert('Safari: Сподели (□↑) → Добави към началния екран → Добави');
+      };
+    },2500);
+  }
+})();
+</script>
+</body>
+</html>

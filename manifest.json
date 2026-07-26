@@ -1,0 +1,24 @@
+{
+  "name": "TAXI SOFIA (тест)",
+  "short_name": "TAXISOFIA",
+  "description": "Реален такси demand за София — карта, летище, автобуси",
+  "start_url": "/TAXISOFIA/",
+  "scope": "/TAXISOFIA/",
+  "display": "standalone",
+  "background_color": "#f5f7fa",
+  "theme_color": "#0284c7",
+  "orientation": "portrait-primary",
+  "lang": "bg",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
