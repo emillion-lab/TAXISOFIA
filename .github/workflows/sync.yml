@@ -1,0 +1,41 @@
+name: Sync from BAK
+on:
+  schedule: [{ cron: '17 */3 * * *' }]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch every file the app loads
+        run: |
+          B=https://raw.githubusercontent.com/emillion-lab/BAK/main
+          for f in app.js sw.js leaflet.min.js leaflet.min.css \
+                   flight-cache.json train-arrivals.json bus-arrivals.json \
+                   bus-schedule.json events.json config.json; do
+            curl -fsSL "$B/$f" -o "$f" && echo "ok $f" || echo "ПРОПУСНАТ $f"
+          done
+          curl -fsSL "$B/index.html" -o index.html
+          # тестова идентичност
+          python3 - <<'PY'
+          import re, json
+          s=open('index.html').read()
+          s=s.replace('<h1>📍 SOFIA TAXI DEMAND</h1>','<h1>📍 TAXI SOFIA · ТЕСТ</h1>')
+          s=s.replace('<p>Реална карта · GPS навигация</p>','<p>Тестова версия · обратна връзка се приема</p>')
+          s=re.sub(r'app\.js\?v=[0-9a-z\-]*','app.js?v=taxisofia-'+__import__('time').strftime('%m%d%H'),s)
+          open('index.html','w').write(s)
+          m=json.load(open('manifest.json'))
+          m['name']='TAXI SOFIA (тест)'; m['short_name']='TAXISOFIA'
+          m['start_url']='/TAXISOFIA/'; m['scope']='/TAXISOFIA/'
+          json.dump(m,open('manifest.json','w'),ensure_ascii=False,indent=2)
+          PY
+          # ключът се дописва, ако синхронизацията го е изтрила
+          grep -q "ДИСТАНЦИОНЕН КЛЮЧ" app.js || cat killswitch.txt >> app.js
+          sed -i 's/bakshishapp-bak-v[0-9]*/taxisofia-sync/' sw.js
+          node --check app.js
+      - run: |
+          git config user.name ci; git config user.email ci@taxisofia
+          git add -A && git commit -m "sync from BAK [skip ci]" || echo "без промени"
+          git push

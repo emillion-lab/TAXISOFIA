@@ -1,0 +1,33 @@
+
+// ═══════════════════════════════════════════════
+// ДИСТАНЦИОНЕН КЛЮЧ (само в тестовото копие)
+// ═══════════════════════════════════════════════
+(function(){
+  var CHECK_MS = 10 * 60 * 1000;
+  function block(msg){
+    if(document.getElementById('locked')) return;
+    var d = document.createElement('div');
+    d.id = 'locked';
+    d.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;'
+      + 'align-items:center;justify-content:center;padding:28px;text-align:center;'
+      + 'background:#070c14;color:#e8eef7;font:600 17px/1.6 system-ui,sans-serif';
+    d.innerHTML = '<div><div style="font-size:44px;margin-bottom:14px">🔒</div>'
+      + '<div style="font-weight:800;font-size:19px;margin-bottom:8px">Достъпът е спрян</div>'
+      + '<div style="opacity:.75;font-size:15px">' + (msg || 'Тестовият период приключи.') + '</div></div>';
+    document.body.appendChild(d);
+    try{
+      if('caches' in window) caches.keys().then(function(k){ k.forEach(function(n){ caches.delete(n); }); });
+      if(navigator.serviceWorker) navigator.serviceWorker.getRegistrations()
+        .then(function(rs){ rs.forEach(function(r){ r.unregister(); }); });
+    }catch(e){}
+  }
+  function check(){
+    fetch('access.json?v=' + Date.now(), { cache:'no-store' })
+      .then(function(r){ return r.json(); })
+      .then(function(a){ if(a && a.enabled === false) block(a.message); })
+      .catch(function(){});
+  }
+  check();
+  setInterval(check, CHECK_MS);
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) check(); });
+})();
