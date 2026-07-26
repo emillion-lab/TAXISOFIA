@@ -1341,7 +1341,7 @@ function render(hour) {
         const z=ZONES.find(x=>x.id===zid); if(!z) return '';
         const c=demandColor(score,z.type);
         const sub=(activeEvents[zid]||[])[0]?.name||'';
-        return `<div class="zone-item" onclick="(function(){if(document.body.classList.contains('list-view'))toggleMapView();setTimeout(()=>{window.__focusZone(${z.lat},${z.lng},'${zid}'==='airport'?14:15);'${zid}'==='airport'?showAirportSchedule():showZonePopup('${zid}');},150);})()">
+        return `<div class="zone-item" onclick="(function(){document.body.classList.remove('full-list');document.body.removeAttribute('data-full');document.querySelectorAll('.dest-btn').forEach(function(b){b.classList.remove('on')});if(document.body.classList.contains('list-view'))toggleMapView();setTimeout(()=>{window.__focusZone(${z.lat},${z.lng},'${zid}'==='airport'?14:15);'${zid}'==='airport'?showAirportSchedule():showZonePopup('${zid}');},150);})()">
           <div class="zone-dot" style="background:${c.fill}"></div>
           <div style="flex:1;min-width:0">
             <div class="zone-name">${z.icon} ${z.name}</div>
@@ -2575,18 +2575,6 @@ function toggleMapView(){
   var _origTransit = showTransitPopup;
   showTransitPopup = function(zid){
     var r = _origTransit(zid);
-    if(zid==='cjp'){
-      setTimeout(function(){
-        var pops=document.querySelectorAll('.leaflet-popup-content');
-        if(!pops.length) return;
-        var p=pops[pops.length-1];
-        if(p.innerHTML.indexOf('bdz-note')>=0) return;
-        p.innerHTML += '<div class="bdz-note" style="margin-top:8px;padding:7px 9px;border-radius:7px;'+
-          'background:rgba(56,189,248,.08);border-left:3px solid #38bdf8;font-size:12px;color:#94a3b8">'+
-          '🚂 Живо разписание на БДЖ — предстои.<br>Засега: пиковете са ~07:30, 13:00, 18:30, 21:40 '+
-          '(пристигания от Пловдив/Варна/Бургас).</div>';
-      }, 200);
-    }
     return r;
   };
 })();
@@ -3020,7 +3008,13 @@ function toggleMapView(){
     }).catch(function(){});
   }
   function pullTrains(){
-    fetch('train-arrivals.json?v='+Date.now()).then(function(r){return r.json()})
+    fetch('train-arrivals.json?v='+Date.now()).then(function(r){
+        setTimeout(function(){
+          document.querySelectorAll('.leaflet-popup-content').forEach(function(p){
+            if(p.dataset) delete p.dataset.eta18;   // позволяваме повторно обогатяване
+            try{ enrich(p); }catch(e){}
+          });
+        }, 60);return r.json()})
       .then(function(d){ TRAINS = d; }).catch(function(){});
   }
   pullLive(); pullTrains();
@@ -5176,14 +5170,12 @@ function toggleMapView(){
   else mount();
 })();
 
+
 // ═══════════════════════════════════════════════
 // ДИСТАНЦИОНЕН КЛЮЧ (само в тестовото копие)
-// Спира приложението за всички, включително вече
-// инсталираните, щом access.json каже enabled:false.
 // ═══════════════════════════════════════════════
 (function(){
-  var CHECK_MS = 10 * 60 * 1000;   // сверява на всеки 10 минути
-
+  var CHECK_MS = 10 * 60 * 1000;
   function block(msg){
     if(document.getElementById('locked')) return;
     var d = document.createElement('div');
@@ -5196,20 +5188,17 @@ function toggleMapView(){
       + '<div style="opacity:.75;font-size:15px">' + (msg || 'Тестовият период приключи.') + '</div></div>';
     document.body.appendChild(d);
     try{
-      // изчистваме и офлайн копието, за да не работи от кеш
       if('caches' in window) caches.keys().then(function(k){ k.forEach(function(n){ caches.delete(n); }); });
       if(navigator.serviceWorker) navigator.serviceWorker.getRegistrations()
         .then(function(rs){ rs.forEach(function(r){ r.unregister(); }); });
     }catch(e){}
   }
-
   function check(){
     fetch('access.json?v=' + Date.now(), { cache:'no-store' })
       .then(function(r){ return r.json(); })
       .then(function(a){ if(a && a.enabled === false) block(a.message); })
-      .catch(function(){ /* няма мрежа — оставяме да работи */ });
+      .catch(function(){});
   }
-
   check();
   setInterval(check, CHECK_MS);
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) check(); });
