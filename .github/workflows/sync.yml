@@ -24,7 +24,7 @@ jobs:
           s=open('index.html').read()
           s=s.replace('<h1>📍 SOFIA TAXI DEMAND</h1>','<h1>📍 TAXI SOFIA · ТЕСТ</h1>')
           s=s.replace('<p>Реална карта · GPS навигация</p>','<p>Тестова версия · обратна връзка се приема</p>')
-          s=re.sub(r'app\.js\?v=[0-9a-z\-]*','app.js?v=taxisofia-'+__import__('time').strftime('%m%d%H'),s)
+          s=re.sub(r'app\.js\?v=[0-9a-z\-]*','app.js?v=taxisofia-'+__import__('time').strftime('%m%d%H%M'),s)
           open('index.html','w').write(s)
           m=json.load(open('manifest.json'))
           m['name']='TAXI SOFIA (тест)'; m['short_name']='TAXISOFIA'
