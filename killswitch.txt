@@ -7,7 +7,7 @@
   var CHECK_MS = 60 * 1000;           // проверка на access.json (ръчен превключвател)
   var ACTIVE_MS = 10 * 60 * 1000;     // активен прозорец: 10 мин
   var CYCLE_MS = 110 * 60 * 1000;     // пълен цикъл: 10 мин достъп + 100 мин заключено
-  var CONTACT = 'Свържете се с мен за платена версия: [ТУК Е-МЕЙЛ/ТЕЛЕФОН]';
+  var CONTACT = 'свържете се с мен за платена версия на 0889638230';
 
   function block(msg){
     if(document.getElementById('locked')) return;
