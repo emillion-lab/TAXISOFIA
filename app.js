@@ -6460,10 +6460,15 @@ window.showKatPopup = function(){
 })();
 
 // ═══════════════════════════════════════════════
-// ДИСТАНЦИОНЕН КЛЮЧ (само в тестовото копие)
+// ДИСТАНЦИОНЕН КЛЮЧ + ЦИКЪЛ 10 МИН ТЕСТ / 100 МИН ЗАКЛЮЧЕНО
+// (само в тестовото копие)
 // ═══════════════════════════════════════════════
 (function(){
-  var CHECK_MS = 10 * 60 * 1000;
+  var CHECK_MS = 60 * 1000;           // проверка на access.json (ръчен превключвател)
+  var ACTIVE_MS = 10 * 60 * 1000;     // активен прозорец: 10 мин
+  var CYCLE_MS = 110 * 60 * 1000;     // пълен цикъл: 10 мин достъп + 100 мин заключено
+  var CONTACT = 'свържете се с мен за платена версия на 0889638230';
+
   function block(msg){
     if(document.getElementById('locked')) return;
     var d = document.createElement('div');
@@ -6481,13 +6486,52 @@ window.showKatPopup = function(){
         .then(function(rs){ rs.forEach(function(r){ r.unregister(); }); });
     }catch(e){}
   }
+
+  function unlock(){
+    var d = document.getElementById('locked');
+    if(d) d.remove();
+  }
+
+  function cycleState(){
+    var pos = Date.now() % CYCLE_MS;
+    if(pos < ACTIVE_MS){
+      return { locked:false };
+    }
+    var remainMs = CYCLE_MS - pos;
+    var remainMin = Math.ceil(remainMs / 60000);
+    return {
+      locked:true,
+      msg:'Временният тестов достъп приключи. Изчакайте около ' + remainMin
+        + ' мин. за следващия тестов прозорец, или ' + CONTACT
+    };
+  }
+
+  var manualOff = false;
+
   function check(){
     fetch('access.json?v=' + Date.now(), { cache:'no-store' })
       .then(function(r){ return r.json(); })
-      .then(function(a){ if(a && a.enabled === false) block(a.message); })
-      .catch(function(){});
+      .then(function(a){
+        if(a && a.enabled === false){
+          manualOff = true;
+          block(a.message);
+          return;
+        }
+        manualOff = false;
+        applyCycle();
+      })
+      .catch(function(){ applyCycle(); });
   }
+
+  function applyCycle(){
+    if(manualOff) return;
+    var s = cycleState();
+    if(s.locked) block(s.msg);
+    else unlock();
+  }
+
   check();
   setInterval(check, CHECK_MS);
+  setInterval(applyCycle, 15 * 1000); // по-чест локален превключвател за прозореца 10/100
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) check(); });
 })();
