@@ -2,6 +2,12 @@ name: Sync from BAK
 on:
   schedule: [{ cron: '7,37 * * * *' }]
   workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      # .run изтегля веднага пресни файлове от BAK, без Actions бутона
+      - '.run'
+      - 'killswitch.txt'
 permissions:
   contents: write
 jobs:
