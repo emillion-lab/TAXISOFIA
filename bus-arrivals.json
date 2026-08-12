@@ -1,147 +1,147 @@
 {
-  "updated": "2026-08-12T15:11:39.975108+03:00",
+  "updated": "2026-08-12T17:59:57.960892+03:00",
   "source": "centralnaavtogara.bg",
   "window_hours": 8,
   "count": 20,
-  "intl_count": 0,
+  "intl_count": 1,
   "arrivals": [
     {
-      "time": "15:15",
-      "from": "СВИЛЕНГРАД",
-      "sector": "36",
+      "time": "18:10",
+      "from": "ПЛЕВЕН",
+      "sector": "10",
       "operator": "",
       "intl": false
     },
     {
-      "time": "15:15",
+      "time": "18:10",
+      "from": "КУЛАТА",
+      "sector": "",
+      "operator": "",
+      "intl": false
+    },
+    {
+      "time": "18:20",
+      "from": "КНЕЖА",
+      "sector": "",
+      "operator": "",
+      "intl": false
+    },
+    {
+      "time": "18:30",
+      "from": "СЛИВЕН",
+      "sector": "28",
+      "operator": "",
+      "intl": false
+    },
+    {
+      "time": "18:30",
+      "from": "РУСЕ",
+      "sector": "11",
+      "operator": "",
+      "intl": false
+    },
+    {
+      "time": "18:30",
+      "from": "ПЛОВДИВ",
+      "sector": "",
+      "operator": "",
+      "intl": false
+    },
+    {
+      "time": "18:30",
+      "from": "ХАДЖИДИМОВО",
+      "sector": "",
+      "operator": "",
+      "intl": false
+    },
+    {
+      "time": "18:33",
+      "from": "КОЗЛОДУЙ",
+      "sector": "",
+      "operator": "",
+      "intl": false
+    },
+    {
+      "time": "18:35",
+      "from": "РУСЕ",
+      "sector": "",
+      "operator": "",
+      "intl": false
+    },
+    {
+      "time": "18:40",
+      "from": "ЗЛАТОГРАД",
+      "sector": "",
+      "operator": "",
+      "intl": false
+    },
+    {
+      "time": "18:50",
+      "from": "АПРИЛЦИ",
+      "sector": "",
+      "operator": "",
+      "intl": false
+    },
+    {
+      "time": "19:00",
+      "from": "БЛАГОЕВГРАД",
+      "sector": "26",
+      "operator": "",
+      "intl": false
+    },
+    {
+      "time": "19:00",
+      "from": "ЛОВЕЧ",
+      "sector": "",
+      "operator": "",
+      "intl": false
+    },
+    {
+      "time": "19:00",
+      "from": "ДИМИТРОВГРАД",
+      "sector": "",
+      "operator": "",
+      "intl": false
+    },
+    {
+      "time": "19:30",
+      "from": "ВАРНА",
+      "sector": "7",
+      "operator": "",
+      "intl": false
+    },
+    {
+      "time": "20:00",
       "from": "ПЛОВДИВ",
       "sector": "6",
       "operator": "",
       "intl": false
     },
     {
-      "time": "15:15",
-      "from": "ИСКЪР",
-      "sector": "40",
-      "operator": "",
-      "intl": false
-    },
-    {
-      "time": "15:20",
-      "from": "ЛОВЕЧ",
-      "sector": "",
-      "operator": "",
-      "intl": false
-    },
-    {
-      "time": "15:30",
-      "from": "ЯМБОЛ",
-      "sector": "27",
-      "operator": "",
-      "intl": false
-    },
-    {
-      "time": "15:30",
-      "from": "КАТУНЦИ",
-      "sector": "29",
-      "operator": "",
-      "intl": false
-    },
-    {
-      "time": "15:30",
-      "from": "ДОБРИЧ",
+      "time": "21:30",
+      "from": "КАВАРНА",
       "sector": "7",
       "operator": "",
       "intl": false
     },
     {
-      "time": "15:30",
-      "from": "БУРГАС",
-      "sector": "23",
-      "operator": "",
-      "intl": false
-    },
-    {
-      "time": "15:30",
-      "from": "ГАБРОВО",
-      "sector": "",
-      "operator": "",
-      "intl": false
-    },
-    {
-      "time": "15:30",
-      "from": "ПЛЕВЕН",
-      "sector": "",
-      "operator": "",
-      "intl": false
-    },
-    {
-      "time": "15:45",
-      "from": "ДИМИТРОВГРАД",
-      "sector": "35",
-      "operator": "",
-      "intl": false
-    },
-    {
-      "time": "15:47",
-      "from": "КЪРДЖАЛИ",
-      "sector": "",
-      "operator": "",
-      "intl": false
-    },
-    {
-      "time": "15:50",
-      "from": "ЛОМ",
-      "sector": "40",
-      "operator": "",
-      "intl": false
-    },
-    {
-      "time": "16:00",
-      "from": "РУСЕ",
+      "time": "22:00",
+      "from": "БУКУРЕЩ",
       "sector": "9",
       "operator": "",
-      "intl": false
+      "intl": true
     },
     {
-      "time": "16:00",
-      "from": "Г.ДЕЛЧЕВ",
-      "sector": "",
+      "time": "22:30",
+      "from": "АЛБЕНА",
+      "sector": "6",
       "operator": "",
       "intl": false
     },
     {
-      "time": "16:11",
-      "from": "ВАРНА",
-      "sector": "",
-      "operator": "",
-      "intl": false
-    },
-    {
-      "time": "16:15",
-      "from": "ЛОВЕЧ",
-      "sector": "",
-      "operator": "",
-      "intl": false
-    },
-    {
-      "time": "16:15",
-      "from": "РУСЕ",
-      "sector": "",
-      "operator": "",
-      "intl": false
-    },
-    {
-      "time": "16:16",
-      "from": "СЛИВЕН",
-      "sector": "",
-      "operator": "",
-      "intl": false
-    },
-    {
-      "time": "16:20",
-      "from": "ПЛОВДИВ",
-      "sector": "",
+      "time": "23:30",
+      "from": "СВ.ВЛАС",
+      "sector": "23",
       "operator": "",
       "intl": false
     }
