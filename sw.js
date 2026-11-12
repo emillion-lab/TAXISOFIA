@@ -9,6 +9,9 @@ const STATIC_FILES = [
   '/BAK/leaflet.min.js',
   '/BAK/leaflet.min.css',
   '/BAK/manifest.json',
+  '/BAK/bak-v3.css',
+  '/BAK/bak-guard.js',
+  '/BAK/bak-ui.js',
 ];
 
 // Инсталация — кешира статичните файлове
